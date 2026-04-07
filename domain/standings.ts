@@ -12,9 +12,7 @@ export function calculateProjectedStandings(
   matches: Match[],
 ): TeamStanding[] {
   const matchById = new Map(matches.map((m) => [m.id, m]))
-  const standings = new Map(
-    baseStandings.map((s) => [s.teamId, { ...s }]),
-  )
+  const standings = new Map(baseStandings.map((s) => [s.teamId, { ...s }]))
 
   for (const prediction of predictions) {
     const match = matchById.get(prediction.matchId)

@@ -104,7 +104,12 @@ describe('calculateLeaderboard', () => {
   })
 
   it('ignores predictions for unfinished matches', () => {
-    const unfinished: Match = { ...makeMatch(1, 0, 0), isFinished: false, homeGoals: null, awayGoals: null }
+    const unfinished: Match = {
+      ...makeMatch(1, 0, 0),
+      isFinished: false,
+      homeGoals: null,
+      awayGoals: null,
+    }
     const predictions = [makePrediction('u1', 1, 1, 0)]
 
     const result = calculateLeaderboard(predictions, [unfinished], users)
