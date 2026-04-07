@@ -74,30 +74,12 @@ export default function StandingsPage() {
 
       {/* Table */}
       <section>
-        <div className="bg-surface-container-low overflow-hidden rounded-xl">
-          <div className="border-outline-variant/10 bg-surface-container-high/50 flex items-center justify-between border-b px-4 py-3">
-            <span className="font-headline text-on-surface-variant text-xs font-bold tracking-widest uppercase">
-              Clasificación Proyectada
-            </span>
-            {hasProjection ? (
-              <span className="bg-secondary/10 text-secondary flex animate-pulse items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold">
-                <span
-                  className="material-symbols-outlined text-[12px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  bolt
-                </span>
-                EN VIVO
-              </span>
-            ) : (
-              <span className="bg-surface-container-highest text-on-surface-variant rounded-full px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
-                A CALCULAR
-              </span>
-            )}
-          </div>
-
-          <StandingsTable standings={standings} projected={hasProjection ? projected : undefined} />
-        </div>
+        <StandingsTable
+          standings={standings}
+          projected={hasProjection ? projected : undefined}
+          title="Clasificación Proyectada"
+          badge={hasProjection ? 'live' : 'pending'}
+        />
       </section>
 
       {/* Insight card */}

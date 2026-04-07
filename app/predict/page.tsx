@@ -5,6 +5,7 @@ import { PredictionForm } from '../../components/PredictionForm'
 import type { Match, Prediction, TeamStanding } from '../../domain/types'
 
 export default function PredictPage() {
+  // Lazy init from localStorage — safe in 'use client' components (runs only on client)
   const [userId, setUserId] = useState<string | null>(() =>
     typeof window !== 'undefined' ? localStorage.getItem('matchcast_user_id') : null,
   )

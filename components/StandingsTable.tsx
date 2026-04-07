@@ -3,10 +3,12 @@ import type { TeamStanding } from '../domain/types'
 type Props = {
   standings: TeamStanding[]
   projected?: TeamStanding[]
+  title?: string
   subtitle?: string
+  badge?: 'live' | 'pending'
 }
 
-export function StandingsTable({ standings, projected, subtitle }: Props) {
+export function StandingsTable({ standings, projected, title, subtitle, badge }: Props) {
   const rows = projected ?? standings
   const sorted = [...rows].sort((a, b) => {
     const pd = b.points - a.points
@@ -21,13 +23,27 @@ export function StandingsTable({ standings, projected, subtitle }: Props) {
     <div className="bg-surface-container-low overflow-hidden rounded-xl">
       <div className="border-outline-variant/10 bg-surface-container-high/50 flex items-center justify-between border-b px-4 py-3">
         <h2 className="font-headline text-primary text-lg font-bold tracking-widest uppercase">
-          Clasificación
+          {title ?? 'Clasificación'}
         </h2>
-        {subtitle && (
+        {badge === 'live' ? (
+          <span className="bg-secondary/10 text-secondary flex animate-pulse items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold">
+            <span
+              className="material-symbols-outlined text-[12px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              bolt
+            </span>
+            EN VIVO
+          </span>
+        ) : badge === 'pending' ? (
+          <span className="bg-surface-container-highest text-on-surface-variant rounded-full px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
+            A CALCULAR
+          </span>
+        ) : subtitle ? (
           <span className="text-on-surface-variant text-[10px] font-medium tracking-tight uppercase">
             {subtitle}
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className="overflow-x-auto">
