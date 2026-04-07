@@ -4,6 +4,7 @@ out
 build
 public
 *.sql
+*.md
 .agents/
 .claude/skills/skill-creator/
 .junie/
