@@ -50,4 +50,3 @@ next-env.d.ts
 .agents/
 .claude/skills/*
 !.claude/skills/pre-commit
-.claude/skills/pre-commit-workspace/
