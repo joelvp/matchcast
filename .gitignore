@@ -42,3 +42,12 @@ next-env.d.ts
 
 # IntelliJ based IDEs
 .idea
+
+# JetBrains AI
+.junie/
+
+# Agent skills — third-party (reinstall from skills-lock.json)
+.agents/
+.claude/skills/*
+!.claude/skills/pre-commit
+.claude/skills/pre-commit-workspace/

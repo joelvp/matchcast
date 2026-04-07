@@ -8,6 +8,7 @@
 designed to be configurable for any league or sport.
 
 Users predict match results for the remaining rounds of the season. The app shows:
+
 - A projected standings table based on each user's predictions
 - A leaderboard ranking users by prediction accuracy once real results are in
 
@@ -18,13 +19,13 @@ Users predict match results for the remaining rounds of the season. The app show
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 14 (App Router) + TypeScript |
-| Styles | Tailwind CSS + shadcn/ui |
-| Database / Backend | Supabase (PostgreSQL + Edge Functions) |
-| Deployment | Vercel |
-| Auto-sync | Supabase Edge Function + pg_cron (every Sunday night) |
+| Layer              | Technology                                            |
+| ------------------ | ----------------------------------------------------- |
+| Framework          | Next.js 14 (App Router) + TypeScript                  |
+| Styles             | Tailwind CSS + shadcn/ui                              |
+| Database / Backend | Supabase (PostgreSQL + Edge Functions)                |
+| Deployment         | Vercel                                                |
+| Auto-sync          | Supabase Edge Function + pg_cron (every Sunday night) |
 
 ---
 
@@ -43,11 +44,11 @@ dev    → development (auto-deploy to Vercel preview)
 
 ## Environments
 
-| | Dev | Prod |
-|---|---|---|
-| Frontend | Vercel preview URL | `matchcast.vercel.app` |
-| Database | Supabase project: `matchcast-dev` | Supabase project: `matchcast-prod` |
-| pg_cron | Disabled — trigger manually | Enabled — runs every Sunday 22:00 CET |
+|          | Dev                               | Prod                                  |
+| -------- | --------------------------------- | ------------------------------------- |
+| Frontend | Vercel preview URL                | `matchcast.vercel.app`                |
+| Database | Supabase project: `matchcast-dev` | Supabase project: `matchcast-prod`    |
+| pg_cron  | Disabled — trigger manually       | Enabled — runs every Sunday 22:00 CET |
 
 Each environment has its own Supabase project with separate credentials.
 Vercel environment variables are configured per-environment pointing to the correct Supabase project.
@@ -286,17 +287,18 @@ INSERT INTO matches (round, match_date, home_team_id, away_team_id) VALUES
 Scoring system: win = +3pts, draw = +1pt each, loss = 0pts.
 
 `calculateProjectedStandings(baseStandings, predictions)`:
+
 1. Start from base standings (real data from `standings` table)
 2. Apply each predicted result
 3. Return projected standings sorted by: points → goal difference → goals scored
 
 ### Leaderboard (`domain/leaderboard.ts`)
 
-| Result | Points |
-|--------|--------|
-| Exact score (e.g. predict 3-1, real 3-1) | **5 pts** |
+| Result                                        | Points    |
+| --------------------------------------------- | --------- |
+| Exact score (e.g. predict 3-1, real 3-1)      | **5 pts** |
 | Correct 1X2 only (e.g. predict 2-0, real 1-0) | **2 pts** |
-| Wrong | 0 pts |
+| Wrong                                         | 0 pts     |
 
 `calculateLeaderboard(allPredictions, realResults)` returns users ranked by total points.
 
@@ -305,6 +307,7 @@ Scoring system: win = +3pts, draw = +1pt each, loss = 0pts.
 ## User flow
 
 ### Regular user
+
 1. Enter name → creates entry in `users` (UUID saved to localStorage as `userId`)
 2. View current standings on Home
 3. Go to Predictions → fill in scores for each match in rounds 5-8
@@ -312,6 +315,7 @@ Scoring system: win = +3pts, draw = +1pt each, loss = 0pts.
 5. After each real round, view leaderboard in Results
 
 ### Admin (you)
+
 - No admin panel needed: real results sync automatically via Edge Function every Sunday
 - If scraper fails: update `matches.home_goals / away_goals / is_finished` directly in Supabase Dashboard
 
@@ -319,12 +323,12 @@ Scoring system: win = +3pts, draw = +1pt each, loss = 0pts.
 
 ## API routes
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/api/standings` | GET | Current standings with team info |
-| `/api/predictions` | GET `?userId=<uuid>` | All predictions for a user |
-| `/api/predictions` | POST | Upsert a prediction |
-| `/api/leaderboard` | GET | Accuracy ranking for finished rounds |
+| Route              | Method               | Description                          |
+| ------------------ | -------------------- | ------------------------------------ |
+| `/api/standings`   | GET                  | Current standings with team info     |
+| `/api/predictions` | GET `?userId=<uuid>` | All predictions for a user           |
+| `/api/predictions` | POST                 | Upsert a prediction                  |
+| `/api/leaderboard` | GET                  | Accuracy ranking for finished rounds |
 
 API routes always use `infrastructure/supabase/server.ts` (service role). Never the public client.
 
@@ -335,12 +339,14 @@ API routes always use `infrastructure/supabase/server.ts` (service role). Never 
 Path: `supabase/functions/sync-results/index.ts`
 
 **What it does:**
+
 1. Fetch each round page from resultadoshockey.isquad.es
 2. Parse HTML to extract finished match scores
 3. Update `matches` with `home_goals`, `away_goals`, `is_finished = true`
 4. Recalculate `standings` by applying new results
 
 **URLs to scrape:**
+
 ```
 https://resultadoshockey.isquad.es/competicion.php?seleccion=0&id=8205&jornada=5&id_ambito=0&id_superficie=1
 https://resultadoshockey.isquad.es/competicion.php?seleccion=0&id=8205&jornada=6&id_ambito=0&id_superficie=1
@@ -351,6 +357,7 @@ https://resultadoshockey.isquad.es/competicion.php?seleccion=0&id=8205&jornada=8
 **Score format in HTML:** column `MARCADOR` — pending: `-`, finished: `X - Y`
 
 **pg_cron schedule (prod only):**
+
 ```sql
 SELECT cron.schedule(
   'sync-match-results',
@@ -367,6 +374,7 @@ SELECT cron.schedule(
 ## Environment variables
 
 ### `.env.local` (Next.js)
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
@@ -374,6 +382,7 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>   # Server only — never exposed t
 ```
 
 ### Supabase Edge Function secrets
+
 ```
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
@@ -384,10 +393,12 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 ## Pages
 
 ### `app/page.tsx` — Home
+
 - Server Component: direct Supabase fetch for current standings
 - Next upcoming round with its 4 matches
 
 ### `app/predict/page.tsx` — Predictions
+
 - `'use client'` — needs state and user interaction
 - Tabs per round (R5, R6, R7, R8)
 - Score inputs per match (home / away)
@@ -395,11 +406,13 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 - Finished rounds shown as read-only
 
 ### `app/standings/page.tsx` — Projected standings
+
 - `'use client'` — reads `userId` from localStorage
 - Fetches user predictions, runs `calculateProjectedStandings()` locally
 - Table with ↑↓ arrows vs current standings
 
 ### `app/results/page.tsx` — Leaderboard
+
 - Server Component — only shows finished rounds
 - Users ranked by total prediction points
 - Per-round breakdown: ✅ exact (5pts) / 🟡 1X2 (2pts) / ❌ miss
@@ -463,15 +476,18 @@ matchcast/
 ```
 
 The root `CLAUDE.md` should then contain only:
+
 ```markdown
 # matchcast
 
 League prediction app — [one line description]
 
 ## Stack
+
 [4-line table]
 
 ## Folder structure
+
 [tree, no explanations]
 
 @.claude/architecture.md

@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+public
+*.sql
+.agents/
+.claude/skills/skill-creator/
+.junie/

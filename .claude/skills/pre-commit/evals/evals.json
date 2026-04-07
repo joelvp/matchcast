@@ -1,0 +1,23 @@
+{
+  "skill_name": "pre-commit",
+  "evals": [
+    {
+      "id": 1,
+      "name": "eval-all-pass",
+      "prompt": "ok voy a hacer un commit con los cambios de hoy, todo bien? puedes revisarlo antes",
+      "expected_output": "Runs all 4 checks (tsc, lint, tests, format), shows output of each, ends with a clear summary block using emojis, concludes safe or not safe to commit"
+    },
+    {
+      "id": 2,
+      "name": "eval-type-error",
+      "prompt": "run pre-commit checks",
+      "expected_output": "Runs all 4 checks, clearly identifies any TypeScript errors in the summary, shows ❌ for failing checks and ✅ for passing ones, gives actionable next steps"
+    },
+    {
+      "id": 3,
+      "name": "eval-format-fail",
+      "prompt": "quiero commitear los cambios del leaderboard, hay algún problema con el código?",
+      "expected_output": "Runs all 4 checks, if format check fails tells user to run npm run format to fix automatically, summary is concise and clear"
+    }
+  ]
+}
