@@ -1,16 +1,18 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import Link from 'next/link'
+import { Inter, Space_Grotesk } from 'next/font/google'
+import BottomNav from '@/components/BottomNav'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-space-grotesk',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
 })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -24,39 +26,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
-        <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-          <nav className="mx-auto flex max-w-2xl items-center gap-6 px-4 py-3">
-            <Link
-              href="/"
-              className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-100"
-            >
-              matchcast
-            </Link>
-            <div className="flex gap-4 text-sm">
-              <Link
-                href="/predict"
-                className="text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                Predecir
-              </Link>
-              <Link
-                href="/standings"
-                className="text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                Clasificación
-              </Link>
-              <Link
-                href="/results"
-                className="text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                Resultados
-              </Link>
-            </div>
-          </nav>
+    <html lang="es" className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        />
+      </head>
+      <body className="bg-surface text-on-surface flex min-h-full flex-col">
+        <header className="bg-surface sticky top-0 z-50 flex items-center justify-between px-6 py-4">
+          <span className="font-headline text-primary-container text-2xl font-black tracking-tighter">
+            MATCHCAST
+          </span>
+          <span className="material-symbols-outlined text-primary">settings</span>
         </header>
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-md flex-1 px-4 pt-2 pb-24">{children}</main>
+        <BottomNav />
       </body>
     </html>
   )
