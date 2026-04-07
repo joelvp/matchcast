@@ -3,9 +3,10 @@ import type { TeamStanding } from '../domain/types'
 type Props = {
   standings: TeamStanding[]
   projected?: TeamStanding[]
+  subtitle?: string
 }
 
-export function StandingsTable({ standings, projected }: Props) {
+export function StandingsTable({ standings, projected, subtitle }: Props) {
   const rows = projected ?? standings
   const sorted = [...rows].sort((a, b) => {
     const pd = b.points - a.points
@@ -17,83 +18,91 @@ export function StandingsTable({ standings, projected }: Props) {
   })
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-zinc-200 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:border-zinc-700 dark:text-zinc-400">
-            <th className="py-3 pr-2 text-left">#</th>
-            <th className="py-3 pr-4 text-left">Equipo</th>
-            <th className="px-2 py-3 text-center">PJ</th>
-            <th className="px-2 py-3 text-center">G</th>
-            <th className="px-2 py-3 text-center">E</th>
-            <th className="px-2 py-3 text-center">P</th>
-            <th className="px-2 py-3 text-center">GF</th>
-            <th className="px-2 py-3 text-center">GC</th>
-            <th className="px-2 py-3 text-center">DG</th>
-            <th className="py-3 pl-2 text-center font-bold text-zinc-800 dark:text-zinc-100">
-              Pts
-            </th>
-            {projected && <th className="py-3 pl-3 text-center">±</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-          {sorted.map((team, i) => {
-            const currentPos = projected ? standings.findIndex((s) => s.teamId === team.teamId) : i
-            const projectedPos = i
-            const diff = projected ? currentPos - projectedPos : null
-            const gd = team.goalsFor - team.goalsAgainst
+    <div className="bg-surface-container-low overflow-hidden rounded-xl">
+      <div className="border-outline-variant/10 bg-surface-container-high/50 flex items-center justify-between border-b px-4 py-3">
+        <h2 className="font-headline text-primary text-lg font-bold tracking-widest uppercase">
+          Clasificación
+        </h2>
+        {subtitle && (
+          <span className="text-on-surface-variant text-[10px] font-medium tracking-tight uppercase">
+            {subtitle}
+          </span>
+        )}
+      </div>
 
-            return (
-              <tr
-                key={team.teamId}
-                className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-              >
-                <td className="py-3 pr-2 text-zinc-400 tabular-nums">{i + 1}</td>
-                <td className="py-3 pr-4 font-medium text-zinc-900 dark:text-zinc-100">
-                  {team.shortName}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.played}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.won}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.drawn}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.lost}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.goalsFor}
-                </td>
-                <td className="px-2 py-3 text-center text-zinc-600 tabular-nums dark:text-zinc-400">
-                  {team.goalsAgainst}
-                </td>
-                <td
-                  className={`px-2 py-3 text-center tabular-nums ${gd > 0 ? 'text-emerald-600 dark:text-emerald-400' : gd < 0 ? 'text-red-500' : 'text-zinc-400'}`}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr className="bg-surface-container/30 text-on-surface-variant text-[10px] font-bold tracking-widest uppercase">
+              <th className="px-4 py-3">Pos</th>
+              <th className="px-4 py-3">Eq</th>
+              <th className="px-4 py-3 text-center">Pts</th>
+              <th className="px-4 py-3 text-center">PJ</th>
+              <th className="px-4 py-3 text-center">G</th>
+              <th className="px-4 py-3 text-center">E</th>
+              <th className="px-4 py-3 text-center">P</th>
+              <th className="px-4 py-3 text-center">DG</th>
+              {projected && <th className="px-4 py-3 text-center">±</th>}
+            </tr>
+          </thead>
+          <tbody className="text-sm font-medium">
+            {sorted.map((team, i) => {
+              const currentPos = projected
+                ? standings.findIndex((s) => s.teamId === team.teamId)
+                : i
+              const diff = projected ? currentPos - i : null
+              const gd = team.goalsFor - team.goalsAgainst
+              const isTop = i === 0
+
+              return (
+                <tr
+                  key={team.teamId}
+                  className={`animate-fade-in-up border-outline-variant/5 border-b ${isTop ? 'bg-primary/5' : i % 2 === 0 ? 'bg-surface-container/30' : ''}`}
+                  style={{ animationDelay: `${i * 40}ms`, opacity: 0 }}
                 >
-                  {gd > 0 ? `+${gd}` : gd}
-                </td>
-                <td className="py-3 pl-2 text-center font-bold text-zinc-900 tabular-nums dark:text-zinc-100">
-                  {team.points}
-                </td>
-                {projected && (
-                  <td className="py-3 pl-3 text-center text-xs">
-                    {diff === null || diff === 0 ? (
-                      <span className="text-zinc-300 dark:text-zinc-600">—</span>
-                    ) : diff > 0 ? (
-                      <span className="font-semibold text-emerald-500">↑{diff}</span>
-                    ) : (
-                      <span className="font-semibold text-red-400">↓{Math.abs(diff)}</span>
-                    )}
+                  <td className="px-4 py-4">
+                    <span
+                      className={`font-bold tabular-nums ${isTop ? 'text-primary' : 'text-on-surface'}`}
+                    >
+                      {i + 1}
+                    </span>
                   </td>
-                )}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+                  <td className="font-headline text-on-surface px-4 py-4 font-bold">
+                    {team.shortName}
+                  </td>
+                  <td
+                    className={`px-4 py-4 text-center font-bold tabular-nums ${isTop ? 'text-primary-fixed' : 'text-on-surface'}`}
+                  >
+                    {team.points}
+                  </td>
+                  <td className="text-on-surface-variant px-4 py-4 text-center tabular-nums">
+                    {team.played}
+                  </td>
+                  <td className="px-4 py-4 text-center tabular-nums">{team.won}</td>
+                  <td className="px-4 py-4 text-center tabular-nums">{team.drawn}</td>
+                  <td className="px-4 py-4 text-center tabular-nums">{team.lost}</td>
+                  <td
+                    className={`px-4 py-4 text-center tabular-nums ${gd > 0 ? 'text-primary' : gd < 0 ? 'text-secondary' : 'text-on-surface-variant'}`}
+                  >
+                    {gd > 0 ? `+${gd}` : gd}
+                  </td>
+                  {projected && (
+                    <td className="px-4 py-4 text-center text-xs">
+                      {diff === null || diff === 0 ? (
+                        <span className="text-on-surface-variant">—</span>
+                      ) : diff > 0 ? (
+                        <span className="text-primary font-bold">↑{diff}</span>
+                      ) : (
+                        <span className="text-secondary font-bold">↓{Math.abs(diff)}</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -69,6 +69,21 @@
   vertical-align: middle;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
 .glass-panel {
   background: rgba(36, 39, 30, 0.6);
   backdrop-filter: blur(24px);

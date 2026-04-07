@@ -6,26 +6,40 @@ import { getStandings } from '../infrastructure/supabase/standingsRepository'
 export default async function HomePage() {
   const [standings, matches] = await Promise.all([getStandings(), getMatches()])
 
+  const teams = Object.fromEntries(standings.map((s) => [s.teamId, s.shortName]))
+  const lastFinishedRound = matches.filter((m) => m.isFinished).at(-1)?.round
   const nextRound = matches.find((m) => !m.isFinished)?.round
-  const nextRoundMatches = nextRound ? matches.filter((m) => m.round === nextRound) : []
+  const displayRound = lastFinishedRound ?? nextRound
+  const displayMatches = displayRound ? matches.filter((m) => m.round === displayRound) : []
+  const sectionLabel = lastFinishedRound
+    ? `Resultados Jornada ${lastFinishedRound}`
+    : nextRound
+      ? `Próxima — J${nextRound}`
+      : null
+  const subtitle = lastFinishedRound ? `J${lastFinishedRound} finalizada` : undefined
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <section>
-        <h1 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Clasificación actual
+        <h1 className="font-headline mb-1 text-4xl leading-none font-extrabold tracking-tighter uppercase">
+          DH Masculina
+          <br />
+          <span className="text-primary">Hockey Hierba</span>
         </h1>
-        <StandingsTable standings={standings} />
       </section>
 
-      {nextRoundMatches.length > 0 && (
+      <section>
+        <StandingsTable standings={standings} subtitle={subtitle} />
+      </section>
+
+      {displayMatches.length > 0 && sectionLabel && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold tracking-wider text-zinc-500 uppercase">
-            Próxima jornada — J{nextRound}
+          <h2 className="font-headline mb-4 text-2xl font-bold tracking-tight uppercase">
+            {sectionLabel}
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {nextRoundMatches.map((match) => (
-              <MatchCard key={match.id} match={match} />
+          <div className="space-y-3">
+            {displayMatches.map((match) => (
+              <MatchCard key={match.id} match={match} teams={teams} />
             ))}
           </div>
         </section>

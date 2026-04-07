@@ -3,55 +3,79 @@ import type { Match, Prediction } from '../domain/types'
 type Props = {
   match: Match
   prediction?: Prediction
+  teams?: Record<number, string>
 }
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-}
-
-export function MatchCard({ match, prediction }: Props) {
+export function MatchCard({ match, prediction, teams }: Props) {
   const isFinished = match.isFinished
   const hasPrediction = prediction !== undefined
+  const homeName = teams?.[match.homeTeamId] ?? `#${match.homeTeamId}`
+  const awayName = teams?.[match.awayTeamId] ?? `#${match.awayTeamId}`
+  const homeInitial = homeName.charAt(0).toUpperCase()
+  const awayInitial = awayName.charAt(0).toUpperCase()
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/50">
-      <div className="mb-2 text-xs font-medium tracking-wide text-zinc-400 uppercase">
-        J{match.round} · {formatDate(match.matchDate)}
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex-1 text-right text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-          {match.homeTeamId}
-        </span>
+    <div className="bg-surface-container relative overflow-hidden rounded-xl">
+      <div
+        className={`absolute top-0 left-0 h-full w-1 ${isFinished ? 'bg-primary-container' : 'bg-outline-variant/40'}`}
+      />
 
-        <div className="flex items-center gap-2 text-base font-bold tabular-nums">
-          {isFinished ? (
-            <>
-              <span className="text-zinc-900 dark:text-zinc-100">{match.homeGoals}</span>
-              <span className="text-zinc-300 dark:text-zinc-600">–</span>
-              <span className="text-zinc-900 dark:text-zinc-100">{match.awayGoals}</span>
-            </>
-          ) : hasPrediction ? (
-            <>
-              <span className="text-indigo-600 dark:text-indigo-400">{prediction.homeGoals}</span>
-              <span className="text-zinc-300 dark:text-zinc-600">–</span>
-              <span className="text-indigo-600 dark:text-indigo-400">{prediction.awayGoals}</span>
-            </>
-          ) : (
-            <span className="text-sm font-normal text-zinc-400">vs</span>
-          )}
+      <div className="p-5 pl-6">
+        <div className="flex items-center justify-between">
+          {/* Home team */}
+          <div className="flex w-5/12 flex-col items-center gap-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
+              <span className="font-headline text-on-surface-variant text-lg font-black">
+                {homeInitial}
+              </span>
+            </div>
+            <span className="text-center text-xs leading-tight font-bold uppercase">
+              {homeName}
+            </span>
+          </div>
+
+          {/* Score / vs */}
+          <div className="flex w-2/12 flex-col items-center gap-1">
+            {isFinished ? (
+              <>
+                <div className="font-headline flex items-center gap-2 text-3xl font-black tracking-tighter">
+                  <span>{match.homeGoals}</span>
+                  <span className="text-outline-variant text-xl">-</span>
+                  <span>{match.awayGoals}</span>
+                </div>
+                <span className="bg-primary/10 text-primary-fixed rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest uppercase">
+                  Finalizado
+                </span>
+              </>
+            ) : hasPrediction ? (
+              <>
+                <div className="font-headline text-primary flex items-center gap-2 text-3xl font-black tracking-tighter">
+                  <span>{prediction.homeGoals}</span>
+                  <span className="text-outline-variant text-xl">-</span>
+                  <span>{prediction.awayGoals}</span>
+                </div>
+                <span className="bg-surface-container-high text-on-surface-variant rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest uppercase">
+                  Tu pred.
+                </span>
+              </>
+            ) : (
+              <span className="font-headline text-on-surface-variant text-xl font-bold">vs</span>
+            )}
+          </div>
+
+          {/* Away team */}
+          <div className="flex w-5/12 flex-col items-center gap-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
+              <span className="font-headline text-on-surface-variant text-lg font-black">
+                {awayInitial}
+              </span>
+            </div>
+            <span className="text-center text-xs leading-tight font-bold uppercase">
+              {awayName}
+            </span>
+          </div>
         </div>
-
-        <span className="flex-1 text-left text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-          {match.awayTeamId}
-        </span>
       </div>
-
-      {isFinished && hasPrediction && (
-        <div className="mt-2 text-center text-xs text-zinc-400">
-          Tu predicción: {prediction.homeGoals}–{prediction.awayGoals}
-        </div>
-      )}
     </div>
   )
 }
