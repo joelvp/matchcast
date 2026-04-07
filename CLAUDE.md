@@ -220,7 +220,7 @@ CREATE TABLE predictions (
 INSERT INTO teams (name, short_name) VALUES
   ('AD RIMAS', 'Rimas'),
   ('LINIA 22 STERN MOTOR', 'Linia 22'),
-  ('UNIVERSITAT D''ALACANT - SAN VICENTE', 'Alacant'),
+  ('UNIVERSITAT D''ALACANT - SAN VICENTE', 'Sanvi'),
   ('SPV', 'SPV'),
   ('CD GINER DE LOS RIOS', 'Giner'),
   ('ILURO HC', 'Iluro'),
