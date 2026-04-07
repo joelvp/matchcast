@@ -14,7 +14,14 @@ export default async function ResultsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Marcador</h1>
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <span className="font-headline text-secondary text-sm font-bold tracking-widest uppercase">
+          Global Ranking
+        </span>
+        <h1 className="font-headline text-primary text-4xl leading-none font-bold">MARCADOR</h1>
+      </div>
+
       <Leaderboard entries={entries} />
     </div>
   )
