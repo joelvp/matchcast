@@ -6,32 +6,36 @@ import type { Match, Prediction, TeamStanding } from '../../domain/types'
 import { calculateProjectedStandings } from '../../domain/standings'
 
 export default function StandingsPage() {
+  const [userId, setUserId] = useState<string | null>(null)
   const [standings, setStandings] = useState<TeamStanding[]>([])
   const [projected, setProjected] = useState<TeamStanding[]>([])
+  const [matches, setMatches] = useState<Match[]>([])
+  const [predictions, setPredictions] = useState<Prediction[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const userId = localStorage.getItem('matchcast_user_id')
+    const storedId = localStorage.getItem('matchcast_user_id')
+    setUserId(storedId)
+
+    if (!storedId) {
+      setLoading(false)
+      return
+    }
 
     async function load() {
-      setLoading(true)
-      const [standingsRes, matchesRes] = await Promise.all([
+      const [standingsRes, matchesRes, predictionsRes] = await Promise.all([
         fetch('/api/standings'),
         fetch('/api/matches'),
+        fetch(`/api/predictions?userId=${storedId}`),
       ])
-      const [standingsData, matchesData]: [TeamStanding[], Match[]] = await Promise.all([
-        standingsRes.json(),
-        matchesRes.json(),
-      ])
+      const [standingsData, matchesData, predictionsData]: [TeamStanding[], Match[], Prediction[]] =
+        await Promise.all([standingsRes.json(), matchesRes.json(), predictionsRes.json()])
 
       setStandings(standingsData)
-
-      if (userId) {
-        const predictionsRes = await fetch(`/api/predictions?userId=${userId}`)
-        const predictionsData: Prediction[] = await predictionsRes.json()
-        const proj = calculateProjectedStandings(standingsData, predictionsData, matchesData)
-        setProjected(proj)
-      }
+      setMatches(matchesData.filter((m) => m.round >= 5))
+      setPredictions(predictionsData)
+      const proj = calculateProjectedStandings(standingsData, predictionsData, matchesData)
+      setProjected(proj)
 
       setLoading(false)
     }
@@ -40,6 +44,15 @@ export default function StandingsPage() {
   }, [])
 
   const hasProjection = projected.length > 0
+
+  const pendingMatches = matches.filter((m) => !m.isFinished)
+  const pendingCount = pendingMatches.filter(
+    (m) => !predictions.find((p) => p.matchId === m.id),
+  ).length
+  const progressPct =
+    pendingMatches.length > 0
+      ? ((pendingMatches.length - pendingCount) / pendingMatches.length) * 100
+      : 100
 
   if (loading) {
     return (
@@ -52,9 +65,33 @@ export default function StandingsPage() {
     )
   }
 
-  const topTeam = hasProjection
-    ? [...projected].sort((a, b) => b.points - a.points)[0]
-    : standings[0]
+  if (!userId) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
+        <span
+          className="material-symbols-outlined text-on-surface-variant text-4xl"
+          style={{ fontVariationSettings: "'FILL' 0" }}
+        >
+          bar_chart
+        </span>
+        <p className="text-on-surface-variant text-sm">
+          Regístrate en <span className="text-primary font-bold">Predecir</span> para ver tu
+          proyección.
+        </p>
+      </div>
+    )
+  }
+
+  const sortedProjected = [...(hasProjection ? projected : standings)].sort((a, b) => {
+    const pd = b.points - a.points
+    if (pd !== 0) return pd
+    const gda = a.goalsFor - a.goalsAgainst
+    const gdb = b.goalsFor - b.goalsAgainst
+    if (gdb !== gda) return gdb - gda
+    return b.goalsFor - a.goalsFor
+  })
+
+  const relegatedTeams = sortedProjected.slice(-2).reverse()
 
   return (
     <div className="space-y-8">
@@ -68,9 +105,31 @@ export default function StandingsPage() {
           se cumplen
         </h1>
         <p className="text-on-surface-variant mt-3 max-w-xs text-sm opacity-80">
-          Visualiza el impacto de tus análisis en la tabla final de la liga.
+          Tabla actualizada al momento en base a tus predicciones.
         </p>
       </section>
+
+      {/* Pending predictions banner */}
+      {pendingCount > 0 && (
+        <div className="border-outline-variant/10 bg-surface-container-low flex items-center gap-3 rounded-xl border p-4 shadow-lg">
+          <div className="bg-secondary/10 text-secondary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+            <span className="material-symbols-outlined text-[20px]">pending_actions</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-on-surface text-sm font-bold">
+              {pendingCount === 1
+                ? 'Te falta 1 partido por predecir'
+                : `Te faltan ${pendingCount} partidos por predecir`}
+            </p>
+            <div className="bg-surface-container mt-2 h-1.5 w-full overflow-hidden rounded-full">
+              <div
+                className="bg-secondary h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <section>
@@ -83,7 +142,7 @@ export default function StandingsPage() {
       </section>
 
       {/* Insight card */}
-      {topTeam && (
+      {relegatedTeams.length > 0 && (
         <section>
           <div className="glass-panel rounded-xl p-5">
             <div className="mb-3 flex items-center gap-2">
@@ -94,17 +153,15 @@ export default function StandingsPage() {
                 insights
               </span>
               <span className="font-headline text-on-surface-variant text-xs font-bold tracking-widest uppercase">
-                Insights del algoritmo
+                Predicción
               </span>
             </div>
             <p className="text-on-surface text-sm leading-relaxed">
               {hasProjection ? (
                 <>
-                  Según tus predicciones,{' '}
-                  <span className="text-primary font-bold">{topTeam.shortName}</span> lideraría la
-                  clasificación con{' '}
-                  <span className="text-primary-container font-bold">{topTeam.points} puntos</span>.
-                  Los 2 primeros acceden a la fase final.
+                  Según tus predicciones, descenderían{' '}
+                  <span className="text-secondary font-bold">{relegatedTeams[0]?.shortName}</span> y{' '}
+                  <span className="text-secondary font-bold">{relegatedTeams[1]?.shortName}</span>.
                 </>
               ) : (
                 <>

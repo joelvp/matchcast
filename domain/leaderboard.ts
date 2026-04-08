@@ -50,5 +50,16 @@ export function calculateLeaderboard(
     }
   }
 
+  for (const user of users) {
+    if (!entriesById.has(user.id)) {
+      entriesById.set(user.id, {
+        userId: user.id,
+        userName: user.name,
+        totalPoints: 0,
+        breakdown: [],
+      })
+    }
+  }
+
   return Array.from(entriesById.values()).sort((a, b) => b.totalPoints - a.totalPoints)
 }

@@ -13,6 +13,14 @@ export async function getOrCreateUser(id: string, name: string): Promise<User> {
   return { id: data.id, name: data.name }
 }
 
+export async function getAllUsers(): Promise<User[]> {
+  const { data, error } = await supabaseServer.from('users').select('id, name')
+
+  if (error) throw new Error(error.message)
+
+  return data.map((row) => ({ id: row.id, name: row.name }))
+}
+
 export async function getUsersByIds(ids: string[]): Promise<User[]> {
   if (ids.length === 0) return []
 

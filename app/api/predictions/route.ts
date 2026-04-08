@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
+  deletePrediction,
   getPredictionsByUser,
   upsertPrediction,
 } from '../../../infrastructure/supabase/predictionRepository'
@@ -42,6 +43,31 @@ export async function POST(request: NextRequest) {
 
   try {
     await upsertPrediction({ userId, matchId, homeGoals, awayGoals })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { userId, matchId } = body as Record<string, unknown>
+
+  if (typeof userId !== 'string' || typeof matchId !== 'number') {
+    return NextResponse.json(
+      { error: 'userId (string) and matchId (number) are required' },
+      { status: 400 },
+    )
+  }
+
+  try {
+    await deletePrediction(userId, matchId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })

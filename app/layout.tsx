@@ -30,13 +30,13 @@ export default function RootLayout({
       <head>
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         />
       </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
         <header className="bg-surface sticky top-0 z-50 flex items-center justify-between px-6 py-4">
           <span className="font-headline text-primary-container text-2xl font-black tracking-tighter">
-            MATCHCAST
+            QUINIELA DHB
           </span>
           <span className="material-symbols-outlined text-primary">settings</span>
         </header>

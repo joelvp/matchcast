@@ -103,7 +103,7 @@ describe('calculateLeaderboard', () => {
     expect(result[1].userName).toBe('Bob')
   })
 
-  it('ignores predictions for unfinished matches', () => {
+  it('ignores predictions for unfinished matches (scores 0 pts)', () => {
     const unfinished: Match = {
       ...makeMatch(1, 0, 0),
       isFinished: false,
@@ -113,7 +113,7 @@ describe('calculateLeaderboard', () => {
     const predictions = [makePrediction('u1', 1, 1, 0)]
 
     const result = calculateLeaderboard(predictions, [unfinished], users)
-    expect(result).toHaveLength(0)
+    expect(result.every((e) => e.totalPoints === 0)).toBe(true)
   })
 
   it('includes breakdown per match', () => {

@@ -5,18 +5,19 @@ import { PredictionForm } from '../../components/PredictionForm'
 import type { Match, Prediction, TeamStanding } from '../../domain/types'
 
 export default function PredictPage() {
-  // Lazy init from localStorage — safe in 'use client' components (runs only on client)
-  const [userId, setUserId] = useState<string | null>(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('matchcast_user_id') : null,
-  )
-  const [userName, setUserName] = useState<string>(() =>
-    typeof window !== 'undefined' ? (localStorage.getItem('matchcast_user_name') ?? '') : '',
-  )
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string>('')
   const [nameInput, setNameInput] = useState('')
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
-  const [teams, setTeams] = useState<Record<number, string>>({})
-  const [loading, setLoading] = useState(true)
+  const [teams, setTeams] = useState<Record<number, { shortName: string; shieldUrl?: string }>>({})
+  const [loading, setLoading] = useState(false)
+
+  // Read localStorage only on the client (avoids SSR/client hydration mismatch)
+  useEffect(() => {
+    setUserId(localStorage.getItem('matchcast_user_id'))
+    setUserName(localStorage.getItem('matchcast_user_name') ?? '')
+  }, [])
 
   useEffect(() => {
     if (!userId) return
@@ -33,10 +34,15 @@ export default function PredictPage() {
         predictionsRes.json(),
         standingsRes.json(),
       ])
-      setMatches(matchesData)
+      setMatches((matchesData as Match[]).filter((m) => m.round >= 5))
       setPredictions(predictionsData)
       setTeams(
-        Object.fromEntries((standingsData as TeamStanding[]).map((s) => [s.teamId, s.shortName])),
+        Object.fromEntries(
+          (standingsData as TeamStanding[]).map((s) => [
+            s.teamId,
+            { shortName: s.shortName, shieldUrl: s.shieldUrl },
+          ]),
+        ),
       )
       setLoading(false)
     }
@@ -66,6 +72,15 @@ export default function PredictPage() {
       body: JSON.stringify(prediction),
     })
     setPredictions((prev) => [...prev.filter((p) => p.matchId !== prediction.matchId), prediction])
+  }
+
+  async function handleDelete(matchId: number) {
+    await fetch('/api/predictions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, matchId }),
+    })
+    setPredictions((prev) => prev.filter((p) => p.matchId !== matchId))
   }
 
   if (!userId) {
@@ -157,6 +172,7 @@ export default function PredictPage() {
         matches={matches}
         predictions={predictions}
         onSave={handleSave}
+        onDelete={handleDelete}
         userId={userId}
         teams={teams}
       />

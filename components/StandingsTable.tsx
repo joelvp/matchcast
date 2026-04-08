@@ -69,25 +69,36 @@ export function StandingsTable({ standings, projected, title, subtitle, badge }:
               const diff = projected ? currentPos - i : null
               const gd = team.goalsFor - team.goalsAgainst
               const isTop = i === 0
+              const isBottom = i >= sorted.length - 2
+              const isOurs = team.shortName === 'Giner'
 
               return (
                 <tr
                   key={team.teamId}
-                  className={`animate-fade-in-up border-outline-variant/5 border-b ${isTop ? 'bg-primary/5' : i % 2 === 0 ? 'bg-surface-container/30' : ''}`}
+                  className={`animate-fade-in-up border-outline-variant/5 border-b ${isTop ? 'bg-primary/5' : isBottom ? 'bg-secondary/5' : isOurs ? 'bg-tertiary/10' : i % 2 === 0 ? 'bg-surface-container/30' : ''}`}
                   style={{ animationDelay: `${i * 40}ms`, opacity: 0 }}
                 >
                   <td className="px-4 py-4">
                     <span
-                      className={`font-bold tabular-nums ${isTop ? 'text-primary' : 'text-on-surface'}`}
+                      className={`font-bold tabular-nums ${isTop ? 'text-primary' : isBottom ? 'text-secondary' : isOurs ? 'text-tertiary' : 'text-on-surface'}`}
                     >
                       {i + 1}
                     </span>
                   </td>
                   <td className="font-headline text-on-surface px-4 py-4 font-bold">
-                    {team.shortName}
+                    <div className="flex items-center gap-2">
+                      {team.shieldUrl && (
+                        <img
+                          src={team.shieldUrl}
+                          alt={team.shortName}
+                          className="h-6 w-6 shrink-0 object-contain"
+                        />
+                      )}
+                      {team.shortName}
+                    </div>
                   </td>
                   <td
-                    className={`px-4 py-4 text-center font-bold tabular-nums ${isTop ? 'text-primary-fixed' : 'text-on-surface'}`}
+                    className={`px-4 py-4 text-center font-bold tabular-nums ${isTop ? 'text-primary-fixed' : isBottom ? 'text-secondary' : isOurs ? 'text-tertiary' : 'text-on-surface'}`}
                   >
                     {team.points}
                   </td>

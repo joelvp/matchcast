@@ -32,6 +32,16 @@ export async function getAllPredictions(): Promise<Prediction[]> {
   }))
 }
 
+export async function deletePrediction(userId: string, matchId: number): Promise<void> {
+  const { error } = await supabaseServer
+    .from('predictions')
+    .delete()
+    .eq('user_id', userId)
+    .eq('match_id', matchId)
+
+  if (error) throw new Error(error.message)
+}
+
 export async function upsertPrediction(prediction: Prediction): Promise<void> {
   const { error } = await supabaseServer.from('predictions').upsert(
     {

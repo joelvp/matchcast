@@ -1,16 +1,36 @@
 import type { Match, Prediction } from '../domain/types'
 
+type TeamInfo = { shortName: string; shieldUrl?: string }
+
 type Props = {
   match: Match
   prediction?: Prediction
-  teams?: Record<number, string>
+  teams?: Record<number, TeamInfo>
+}
+
+function formatKickoff(matchDate: string): string {
+  const d = new Date(matchDate)
+  const day = d.toLocaleDateString('es-ES', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Europe/Madrid',
+  })
+  const time = d.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Madrid',
+  })
+  return `${day} · ${time}`
 }
 
 export function MatchCard({ match, prediction, teams }: Props) {
   const isFinished = match.isFinished
   const hasPrediction = prediction !== undefined
-  const homeName = teams?.[match.homeTeamId] ?? `#${match.homeTeamId}`
-  const awayName = teams?.[match.awayTeamId] ?? `#${match.awayTeamId}`
+  const homeTeam = teams?.[match.homeTeamId]
+  const awayTeam = teams?.[match.awayTeamId]
+  const homeName = homeTeam?.shortName ?? `#${match.homeTeamId}`
+  const awayName = awayTeam?.shortName ?? `#${match.awayTeamId}`
   const homeInitial = homeName.charAt(0).toUpperCase()
   const awayInitial = awayName.charAt(0).toUpperCase()
 
@@ -21,13 +41,22 @@ export function MatchCard({ match, prediction, teams }: Props) {
       />
 
       <div className="p-5 pl-6">
+        {/* Kickoff date/time */}
+        <p className="text-on-surface-variant mb-3 text-center text-[11px] font-bold tracking-widest uppercase">
+          {formatKickoff(match.matchDate)}
+        </p>
+
         <div className="flex items-center justify-between">
           {/* Home team */}
           <div className="flex w-5/12 flex-col items-center gap-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
-              <span className="font-headline text-on-surface-variant text-lg font-black">
-                {homeInitial}
-              </span>
+              {homeTeam?.shieldUrl ? (
+                <img src={homeTeam.shieldUrl} alt={homeName} className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="font-headline text-on-surface-variant text-lg font-black">
+                  {homeInitial}
+                </span>
+              )}
             </div>
             <span className="text-center text-xs leading-tight font-bold uppercase">
               {homeName}
@@ -66,9 +95,13 @@ export function MatchCard({ match, prediction, teams }: Props) {
           {/* Away team */}
           <div className="flex w-5/12 flex-col items-center gap-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5">
-              <span className="font-headline text-on-surface-variant text-lg font-black">
-                {awayInitial}
-              </span>
+              {awayTeam?.shieldUrl ? (
+                <img src={awayTeam.shieldUrl} alt={awayName} className="h-10 w-10 object-contain" />
+              ) : (
+                <span className="font-headline text-on-surface-variant text-lg font-black">
+                  {awayInitial}
+                </span>
+              )}
             </div>
             <span className="text-center text-xs leading-tight font-bold uppercase">
               {awayName}

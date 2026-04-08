@@ -28,10 +28,6 @@ Living document tracking what's done and what's next. Update as work progresses.
 - `domain/leaderboard.ts` — `scorePrediction()` (5/2/0) + `calculateLeaderboard()`
 - `domain/standings.test.ts` + `domain/leaderboard.test.ts` — 19 tests passing
 
-## 🚧 In progress
-
-- Merge `feature/domain-layer` → `dev`
-
 ## 📋 Pending
 
 ### 1. Infrastructure layer (`infrastructure/supabase/`)

@@ -6,22 +6,9 @@ type Props = {
 }
 
 function FormBadge({ points }: { points: number }) {
-  if (points === 5) {
-    return (
-      <div className="bg-on-primary flex h-4 w-4 items-center justify-center rounded-sm">
-        <span
-          className="material-symbols-outlined text-primary-container text-[10px]"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          check
-        </span>
-      </div>
-    )
-  }
-  if (points === 2) {
-    return <div className="bg-secondary/60 h-4 w-4 rounded-sm" />
-  }
-  return <div className="bg-error-container/70 h-4 w-4 rounded-sm" />
+  const color =
+    points === 5 ? 'bg-primary-container' : points === 2 ? 'bg-tertiary-container' : 'bg-error'
+  return <div className={`h-4 w-4 rounded-sm ${color}`} />
 }
 
 function Avatar({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
