@@ -7,6 +7,7 @@ export type TeamStanding = {
   teamId: number
   name: string
   shortName: string
+  shieldUrl?: string
   points: number
   played: number
   won: number

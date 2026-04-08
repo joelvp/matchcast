@@ -50,3 +50,6 @@ next-env.d.ts
 .agents/
 .claude/skills/*
 !.claude/skills/pre-commit
+
+# Supabase local config (environment-specific)
+supabase/.temp/
