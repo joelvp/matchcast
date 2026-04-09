@@ -1,14 +1,13 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { PredictionForm } from '@/components/PredictionForm'
+import { LoginForm } from '@/components/LoginForm'
 import { useAuth } from '@/components/AuthProvider'
 import { fetcher } from '@/lib/fetcher'
 import type { Match, Prediction, TeamStanding } from '@/domain/types'
 
 export default function PredictPage() {
-  const router = useRouter()
   const { userId, userName, loading: authLoading } = useAuth()
 
   const ready = !authLoading && !!userId
@@ -53,25 +52,7 @@ export default function PredictPage() {
   }
 
   if (!userId) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
-        <span
-          className="material-symbols-outlined text-on-surface-variant text-4xl"
-          style={{ fontVariationSettings: "'FILL' 0" }}
-        >
-          sports_hockey
-        </span>
-        <p className="text-on-surface-variant text-sm">
-          Inicia sesión para predecir los resultados.
-        </p>
-        <button
-          onClick={() => router.push('/login')}
-          className="font-headline bg-primary-container text-on-primary-fixed rounded-xl px-6 py-3 font-extrabold tracking-widest uppercase"
-        >
-          Entrar
-        </button>
-      </div>
-    )
+    return <LoginForm />
   }
 
   const matches = (allMatches ?? []).filter((m) => m.round >= 5)

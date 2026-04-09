@@ -22,7 +22,7 @@ export default function HeaderMenu() {
 
   async function handleSignOut() {
     await signOut()
-    router.push('/login')
+    router.push('/predict')
   }
 
   return (
