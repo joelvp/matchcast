@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '../../../../infrastructure/supabase/server'
-import { verifyAdminSession } from '../../../../infrastructure/supabase/adminAuth'
+import { supabaseServer } from '@/infrastructure/supabase/server'
+import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
   if (!(await verifyAdminSession(request.headers.get('Authorization')))) {

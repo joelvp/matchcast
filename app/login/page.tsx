@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn, signUp } from '../../infrastructure/supabase/auth'
+import { signIn, signUp } from '@/infrastructure/supabase/auth'
 
 type Mode = 'login' | 'register'
 
@@ -37,7 +37,10 @@ export default function LoginPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: authUser.id, name: name.trim() }),
         })
-        if (!res.ok) throw new Error('Error al crear el usuario')
+        if (!res.ok) {
+          setError('Error al crear el usuario')
+          return
+        }
         router.push('/predict')
       }
     } catch (err) {

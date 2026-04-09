@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { StandingsTable } from '../../components/StandingsTable'
-import { useAuth } from '../../components/AuthProvider'
-import type { Match, Prediction, TeamStanding } from '../../domain/types'
-import { calculateProjectedStandings } from '../../domain/standings'
+import { StandingsTable } from '@/components/StandingsTable'
+import { useAuth } from '@/components/AuthProvider'
+import type { Match, Prediction, TeamStanding } from '@/domain/types'
+import { calculateProjectedStandings } from '@/domain/standings'
 
 export default function StandingsPage() {
   const { userId, loading: authLoading } = useAuth()

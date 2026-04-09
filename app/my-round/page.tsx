@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '../../domain/types'
-import { scorePrediction } from '../../domain/leaderboard'
-import { getCurrentRound } from '../../domain/rounds'
-import { useAuth } from '../../components/AuthProvider'
+import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '@/domain/types'
+import { scorePrediction } from '@/domain/leaderboard'
+import { getCurrentRound } from '@/domain/rounds'
+import { useAuth } from '@/components/AuthProvider'
 
 type ScoredMatch = {
   match: Match

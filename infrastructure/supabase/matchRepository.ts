@@ -1,4 +1,4 @@
-import type { Match } from '../../domain/types'
+import type { Match } from '@/domain/types'
 import { supabaseServer } from './server'
 
 export async function getMatches(): Promise<Match[]> {

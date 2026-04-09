@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getMatches } from '../../../../infrastructure/supabase/matchRepository'
-import { getAllPredictions } from '../../../../infrastructure/supabase/predictionRepository'
-import { getAllUsers } from '../../../../infrastructure/supabase/userRepository'
+import { getMatches } from '@/infrastructure/supabase/matchRepository'
+import { getAllPredictions } from '@/infrastructure/supabase/predictionRepository'
+import { getAllUsers } from '@/infrastructure/supabase/userRepository'
 
 export type RoundParticipant = {
   userId: string

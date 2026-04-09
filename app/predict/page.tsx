@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PredictionForm } from '../../components/PredictionForm'
-import { useAuth } from '../../components/AuthProvider'
-import type { Match, Prediction, TeamStanding } from '../../domain/types'
+import { PredictionForm } from '@/components/PredictionForm'
+import { useAuth } from '@/components/AuthProvider'
+import type { Match, Prediction, TeamStanding } from '@/domain/types'
 
 export default function PredictPage() {
   const router = useRouter()

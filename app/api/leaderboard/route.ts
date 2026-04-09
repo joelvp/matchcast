@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { calculateLeaderboard } from '../../../domain/leaderboard'
-import { getMatches } from '../../../infrastructure/supabase/matchRepository'
-import { getAllPredictions } from '../../../infrastructure/supabase/predictionRepository'
-import { getAllUsers } from '../../../infrastructure/supabase/userRepository'
+import { calculateLeaderboard } from '@/domain/leaderboard'
+import { getMatches } from '@/infrastructure/supabase/matchRepository'
+import { getAllPredictions } from '@/infrastructure/supabase/predictionRepository'
+import { getAllUsers } from '@/infrastructure/supabase/userRepository'
 
 export async function GET(request: Request) {
   try {

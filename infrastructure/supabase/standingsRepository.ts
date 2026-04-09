@@ -1,4 +1,4 @@
-import type { TeamStanding } from '../../domain/types'
+import type { TeamStanding } from '@/domain/types'
 import { supabaseServer } from './server'
 
 export async function getStandings(): Promise<TeamStanding[]> {

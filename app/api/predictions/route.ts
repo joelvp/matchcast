@@ -3,7 +3,7 @@ import {
   deletePrediction,
   getPredictionsByUser,
   upsertPrediction,
-} from '../../../infrastructure/supabase/predictionRepository'
+} from '@/infrastructure/supabase/predictionRepository'
 
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get('userId')

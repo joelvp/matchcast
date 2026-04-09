@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic'
 
-import { Leaderboard } from '../../components/Leaderboard'
-import { calculateLeaderboard } from '../../domain/leaderboard'
-import { getMatches } from '../../infrastructure/supabase/matchRepository'
-import { getAllPredictions } from '../../infrastructure/supabase/predictionRepository'
-import { getAllUsers } from '../../infrastructure/supabase/userRepository'
+import { Leaderboard } from '@/components/Leaderboard'
+import { calculateLeaderboard } from '@/domain/leaderboard'
+import { getMatches } from '@/infrastructure/supabase/matchRepository'
+import { getAllPredictions } from '@/infrastructure/supabase/predictionRepository'
+import { getAllUsers } from '@/infrastructure/supabase/userRepository'
 
 export default async function ResultsPage() {
   const [matches, allPredictions, users] = await Promise.all([
@@ -17,7 +17,6 @@ export default async function ResultsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-1">
         <span className="font-headline text-secondary text-sm font-bold tracking-widest uppercase">
           Global Ranking

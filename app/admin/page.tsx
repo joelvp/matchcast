@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { supabaseBrowser } from '../../infrastructure/supabase/client'
-import type { Match } from '../../domain/types'
+import { supabaseBrowser } from '@/infrastructure/supabase/client'
+import type { Match } from '@/domain/types'
 
 type AdminSession = { accessToken: string }
 type User = { id: string; name: string }
 
-type Section = 'users' | 'predictions' | 'results'
+type Section = 'users' | 'predictions' | 'results' | 'sync'
 
 export default function AdminPage() {
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
@@ -42,6 +42,10 @@ export default function AdminPage() {
   const [resultAway, setResultAway] = useState('')
   const [resultFinished, setResultFinished] = useState(true)
   const [resultResult, setResultResult] = useState<string | null>(null)
+
+  // Sync
+  const [syncResult, setSyncResult] = useState<string | null>(null)
+  const [syncLoading, setSyncLoading] = useState(false)
 
   function authHeaders() {
     return {
@@ -146,6 +150,18 @@ export default function AdminPage() {
     setResultResult(res.ok ? '✓ Resultado guardado.' : `✗ ${data.error}`)
   }
 
+  async function handleSync() {
+    setSyncResult(null)
+    setSyncLoading(true)
+    try {
+      const res = await fetch('/api/admin/sync', { method: 'POST', headers: authHeaders() })
+      const data = await res.json()
+      setSyncResult(res.ok ? '✓ Sync completado.' : `✗ ${data.error}`)
+    } finally {
+      setSyncLoading(false)
+    }
+  }
+
   const rounds = [...new Set(matches.map((m) => m.round))].sort()
   const selectedMatch = matches.find((m) => m.id === resultMatchId)
 
@@ -188,6 +204,7 @@ export default function AdminPage() {
     { key: 'users', label: 'Usuarios', icon: 'manage_accounts' },
     { key: 'predictions', label: 'Predicciones', icon: 'delete_sweep' },
     { key: 'results', label: 'Resultados', icon: 'edit_note' },
+    { key: 'sync', label: 'Sync', icon: 'sync' },
   ]
 
   return (
@@ -428,6 +445,34 @@ export default function AdminPage() {
             className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
           >
             Guardar resultado
+          </button>
+        </div>
+      )}
+
+      {/* Sync section */}
+      {activeSection === 'sync' && (
+        <div className="bg-surface-container-low space-y-4 rounded-xl p-4">
+          <h2 className="font-headline text-sm font-bold tracking-widest uppercase">
+            Sincronizar resultados
+          </h2>
+          <p className="text-on-surface-variant text-sm">
+            Lanza el sync manual de resultados desde resultadoshockey.isquad.es. Equivale al sync
+            automático del domingo.
+          </p>
+          {syncResult && (
+            <p
+              className={`text-sm font-medium ${syncResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+            >
+              {syncResult}
+            </p>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncLoading}
+            className="font-headline bg-primary-container text-on-primary-fixed flex w-full items-center justify-center gap-2 rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[20px]">sync</span>
+            {syncLoading ? 'Sincronizando…' : 'Sync ahora'}
           </button>
         </div>
       )}

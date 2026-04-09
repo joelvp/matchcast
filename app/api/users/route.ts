@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOrCreateUser } from '../../../infrastructure/supabase/userRepository'
+import { getOrCreateUser } from '@/infrastructure/supabase/userRepository'
 
 export async function POST(request: NextRequest) {
   let body: unknown
