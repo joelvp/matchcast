@@ -1,0 +1,6 @@
+npx tsc --noEmit
+npm run lint
+echo "⚙️  Auto-fixing formatting..."
+npm run format
+git add -u
+npm run test
