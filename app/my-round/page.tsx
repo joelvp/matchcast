@@ -15,17 +15,23 @@ type ScoredMatch = {
 }
 
 export default function MyRoundPage() {
-  const { userId } = useAuth()
+  const { userId, loading: authLoading } = useAuth()
   const [showHelp, setShowHelp] = useState(false)
   const [activeRound, setActiveRound] = useState<number | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(null)
   const [selectedPredictions, setSelectedPredictions] = useState<Prediction[]>([])
   const [loadingModal, setLoadingModal] = useState(false)
 
-  const { data: allMatches, isLoading } = useSWR<Match[]>('/api/matches', fetcher)
-  const { data: standings } = useSWR<TeamStanding[]>('/api/standings', fetcher)
+  const { data: allMatches, isLoading } = useSWR<Match[]>(
+    !authLoading ? '/api/matches' : null,
+    fetcher,
+  )
+  const { data: standings } = useSWR<TeamStanding[]>(
+    !authLoading ? '/api/standings' : null,
+    fetcher,
+  )
   const { data: predictions } = useSWR<Prediction[]>(
-    userId ? `/api/predictions?userId=${userId}` : null,
+    !authLoading && userId ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
   const { data: roundRanking } = useSWR<LeaderboardEntry[]>(
@@ -43,6 +49,14 @@ export default function MyRoundPage() {
     )
   }, [allMatches])
 
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="font-headline text-primary-container text-4xl font-black">•••</div>
+      </div>
+    )
+  }
+
   if (!userId) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
@@ -53,14 +67,6 @@ export default function MyRoundPage() {
           sports
         </span>
         <p className="text-on-surface-variant text-sm">Inicia sesión para ver tu jornada.</p>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="font-headline text-primary-container text-4xl font-black">•••</div>
       </div>
     )
   }

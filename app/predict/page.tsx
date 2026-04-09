@@ -59,6 +59,8 @@ export default function PredictPage() {
     )
   }
 
+  if (!userId) return null
+
   const matches = (allMatches ?? []).filter((m) => m.round >= 5)
   const preds = predictions ?? []
   const teams = Object.fromEntries(

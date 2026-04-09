@@ -8,16 +8,21 @@ import type { Match, Prediction, TeamStanding } from '@/domain/types'
 import { calculateProjectedStandings } from '@/domain/standings'
 
 export default function StandingsPage() {
-  const { userId } = useAuth()
+  const { userId, loading: authLoading } = useAuth()
 
-  const { data: standings, isLoading } = useSWR<TeamStanding[]>('/api/standings', fetcher)
-  const { data: allMatches } = useSWR<Match[]>('/api/matches', fetcher)
+  const ready = !authLoading
+
+  const { data: standings, isLoading } = useSWR<TeamStanding[]>(
+    ready ? '/api/standings' : null,
+    fetcher,
+  )
+  const { data: allMatches } = useSWR<Match[]>(ready ? '/api/matches' : null, fetcher)
   const { data: predictions } = useSWR<Prediction[]>(
-    userId ? `/api/predictions?userId=${userId}` : null,
+    ready && userId ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
