@@ -1,4 +1,4 @@
-import type { Match, Prediction } from '../domain/types'
+import type { Match, Prediction } from '@/domain/types'
 
 type TeamInfo = { shortName: string; shieldUrl?: string }
 

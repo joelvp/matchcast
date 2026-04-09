@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabaseBrowser } from '../infrastructure/supabase/client'
-import { signOut as authSignOut } from '../infrastructure/supabase/auth'
+import { supabaseBrowser } from '@/infrastructure/supabase/client'
+import { signOut as authSignOut } from '@/infrastructure/supabase/auth'
 
 type AuthContextType = {
   userId: string | null

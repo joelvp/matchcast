@@ -14,8 +14,8 @@ const eslintConfig = defineConfig([
         {
           patterns: [
             {
-              group: ['../../*', '../../../*', '../../../../*'],
-              message: 'Use @/ path alias instead of deep relative imports',
+              regex: '^\\.\\.',
+              message: 'Use @/ path alias instead of relative imports',
             },
           ],
         },

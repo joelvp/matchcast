@@ -1,9 +1,9 @@
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
-import { RoundViewer } from '../components/RoundViewer'
-import { StandingsTable } from '../components/StandingsTable'
-import { getMatches } from '../infrastructure/supabase/matchRepository'
-import { getStandings } from '../infrastructure/supabase/standingsRepository'
+import { RoundViewer } from '@/components/RoundViewer'
+import { StandingsTable } from '@/components/StandingsTable'
+import { getMatches } from '@/infrastructure/supabase/matchRepository'
+import { getStandings } from '@/infrastructure/supabase/standingsRepository'
 
 export default async function HomePage() {
   const [standings, matches] = await Promise.all([getStandings(), getMatches()])

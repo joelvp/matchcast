@@ -1,4 +1,4 @@
-import type { LeaderboardEntry } from '../domain/types'
+import type { LeaderboardEntry } from '@/domain/types'
 
 type Props = {
   entries: LeaderboardEntry[]
