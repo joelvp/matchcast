@@ -7,14 +7,14 @@ import { signOut as authSignOut } from '@/infrastructure/supabase/auth'
 type AuthContextType = {
   userId: string | null
   userName: string | null
-  loading: false
+  loading: boolean
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
   userId: null,
   userName: null,
-  loading: false,
+  loading: true,
   signOut: async () => {},
 })
 
@@ -22,6 +22,7 @@ type User = { id: string; name: string } | null
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Read session from cookie on mount — no network call
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: (session.user.user_metadata?.name as string) ?? '',
         })
       }
+      setLoading(false)
     })
 
     const {
@@ -55,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         userId: user?.id ?? null,
         userName: user?.name ?? null,
-        loading: false,
+        loading,
         signOut: authSignOut,
       }}
     >

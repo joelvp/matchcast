@@ -10,20 +10,23 @@ import type { Match, Prediction, TeamStanding } from '@/domain/types'
 
 export default function PredictPage() {
   const router = useRouter()
-  const { userId, userName } = useAuth()
+  const { userId, userName, loading: authLoading } = useAuth()
 
-  const { data: allMatches, isLoading } = useSWR<Match[]>('/api/matches', fetcher)
-  const { data: standings } = useSWR<TeamStanding[]>('/api/standings', fetcher)
+  const { data: allMatches, isLoading } = useSWR<Match[]>(
+    authLoading ? null : '/api/matches',
+    fetcher,
+  )
+  const { data: standings } = useSWR<TeamStanding[]>(authLoading ? null : '/api/standings', fetcher)
   const { data: predictions, mutate: mutatePredictions } = useSWR<Prediction[]>(
     userId ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
 
   useEffect(() => {
-    if (!userId || !userName) {
+    if (!authLoading && (!userId || !userName)) {
       router.push('/login')
     }
-  }, [userId, userName, router])
+  }, [authLoading, userId, userName, router])
 
   async function handleSave(prediction: Prediction) {
     await fetch('/api/predictions', {
@@ -46,7 +49,7 @@ export default function PredictPage() {
     mutatePredictions((prev) => (prev ?? []).filter((p) => p.matchId !== matchId), false)
   }
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
