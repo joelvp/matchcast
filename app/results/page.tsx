@@ -1,5 +1,3 @@
-export const revalidate = 300
-
 import { Leaderboard } from '@/components/Leaderboard'
 import { calculateLeaderboard } from '@/domain/leaderboard'
 import { getMatches } from '@/infrastructure/supabase/matchRepository'

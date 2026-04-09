@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { getOrCreateUser } from '@/infrastructure/supabase/userRepository'
 
 export async function POST(request: NextRequest) {
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const user = await getOrCreateUser(id.trim(), name.trim())
+    revalidatePath('/results')
     return NextResponse.json(user)
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { supabaseServer } from '@/infrastructure/supabase/server'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
@@ -33,6 +34,9 @@ export async function POST(request: NextRequest) {
     .eq('id', matchId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  revalidatePath('/')
+  revalidatePath('/results')
 
   return NextResponse.json({ ok: true })
 }
