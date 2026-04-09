@@ -1,60 +1,23 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 import { StandingsTable } from '@/components/StandingsTable'
 import { useAuth } from '@/components/AuthProvider'
+import { fetcher } from '@/lib/fetcher'
 import type { Match, Prediction, TeamStanding } from '@/domain/types'
 import { calculateProjectedStandings } from '@/domain/standings'
 
 export default function StandingsPage() {
-  const { userId, loading: authLoading } = useAuth()
-  const [standings, setStandings] = useState<TeamStanding[]>([])
-  const [projected, setProjected] = useState<TeamStanding[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
-  const [predictions, setPredictions] = useState<Prediction[]>([])
-  const [loading, setLoading] = useState(true)
+  const { userId } = useAuth()
 
-  useEffect(() => {
-    if (authLoading) return
+  const { data: standings, isLoading } = useSWR<TeamStanding[]>('/api/standings', fetcher)
+  const { data: allMatches } = useSWR<Match[]>('/api/matches', fetcher)
+  const { data: predictions } = useSWR<Prediction[]>(
+    userId ? `/api/predictions?userId=${userId}` : null,
+    fetcher,
+  )
 
-    if (!userId) {
-      setLoading(false)
-      return
-    }
-
-    async function load() {
-      const [standingsRes, matchesRes, predictionsRes] = await Promise.all([
-        fetch('/api/standings'),
-        fetch('/api/matches'),
-        fetch(`/api/predictions?userId=${userId}`),
-      ])
-      const [standingsData, matchesData, predictionsData]: [TeamStanding[], Match[], Prediction[]] =
-        await Promise.all([standingsRes.json(), matchesRes.json(), predictionsRes.json()])
-
-      setStandings(standingsData)
-      setMatches(matchesData.filter((m) => m.round >= 5))
-      setPredictions(predictionsData)
-      const proj = calculateProjectedStandings(standingsData, predictionsData, matchesData)
-      setProjected(proj)
-
-      setLoading(false)
-    }
-
-    load()
-  }, [authLoading, userId])
-
-  const hasProjection = projected.length > 0
-
-  const pendingMatches = matches.filter((m) => !m.isFinished)
-  const pendingCount = pendingMatches.filter(
-    (m) => !predictions.find((p) => p.matchId === m.id),
-  ).length
-  const progressPct =
-    pendingMatches.length > 0
-      ? ((pendingMatches.length - pendingCount) / pendingMatches.length) * 100
-      : 100
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
@@ -82,7 +45,27 @@ export default function StandingsPage() {
     )
   }
 
-  const sortedProjected = [...(hasProjection ? projected : standings)].sort((a, b) => {
+  const standingsData = standings ?? []
+  const matchesData = allMatches ?? []
+  const predictionsData = predictions ?? []
+  const matches = matchesData.filter((m) => m.round >= 5)
+
+  const projected =
+    standingsData.length > 0 && predictionsData.length > 0
+      ? calculateProjectedStandings(standingsData, predictionsData, matchesData)
+      : []
+  const hasProjection = projected.length > 0
+
+  const pendingMatches = matches.filter((m) => !m.isFinished)
+  const pendingCount = pendingMatches.filter(
+    (m) => !predictionsData.find((p) => p.matchId === m.id),
+  ).length
+  const progressPct =
+    pendingMatches.length > 0
+      ? ((pendingMatches.length - pendingCount) / pendingMatches.length) * 100
+      : 100
+
+  const sortedProjected = [...(hasProjection ? projected : standingsData)].sort((a, b) => {
     const pd = b.points - a.points
     if (pd !== 0) return pd
     const gda = a.goalsFor - a.goalsAgainst
@@ -134,7 +117,7 @@ export default function StandingsPage() {
       {/* Table */}
       <section>
         <StandingsTable
-          standings={standings}
+          standings={standingsData}
           projected={hasProjection ? projected : undefined}
           title="Clasificación Proyectada"
           badge={hasProjection ? 'live' : 'pending'}

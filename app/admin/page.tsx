@@ -1,16 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { supabaseBrowser } from '@/infrastructure/supabase/client'
 import type { Match } from '@/domain/types'
 
-type AdminSession = { accessToken: string }
 type User = { id: string; name: string }
-
 type Section = 'users' | 'predictions' | 'results' | 'sync'
 
 export default function AdminPage() {
-  const [adminSession, setAdminSession] = useState<AdminSession | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
@@ -47,34 +44,26 @@ export default function AdminPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [syncLoading, setSyncLoading] = useState(false)
 
-  function authHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${adminSession!.accessToken}`,
-    }
-  }
-
   async function handleLogin() {
     if (!password) return
     setLoginError(null)
     setLoginLoading(true)
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
-        email: 'admin@matchcast.local',
-        password,
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
       })
-      if (error || !data.session) {
-        setLoginError('Contraseña incorrecta.')
+      if (!res.ok) {
+        const data = await res.json()
+        setLoginError((data as { error: string }).error)
         return
       }
-      const session = { accessToken: data.session.access_token }
-      setAdminSession(session)
 
-      // Load users and matches
+      setIsAdmin(true)
+
       const [usersRes, matchesRes] = await Promise.all([
-        fetch('/api/admin/users', {
-          headers: { Authorization: `Bearer ${data.session.access_token}` },
-        }),
+        fetch('/api/admin/users'),
         fetch('/api/matches'),
       ])
       const [usersData, matchesData] = await Promise.all([usersRes.json(), matchesRes.json()])
@@ -86,16 +75,27 @@ export default function AdminPage() {
     }
   }
 
+  async function handleLogout() {
+    await fetch('/api/admin/auth', { method: 'DELETE' })
+    setIsAdmin(false)
+    setPassword('')
+    setDataLoaded(false)
+  }
+
   async function handleResetPassword() {
     if (!resetUsername.trim() || !resetPassword) return
     setResetResult(null)
     const res = await fetch('/api/admin/reset-password', {
       method: 'POST',
-      headers: authHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: resetUsername.trim(), newPassword: resetPassword }),
     })
     const data = await res.json()
-    setResetResult(res.ok ? `✓ Contraseña de "${data.username}" actualizada.` : `✗ ${data.error}`)
+    setResetResult(
+      res.ok
+        ? `✓ Contraseña de "${(data as { username: string }).username}" actualizada.`
+        : `✗ ${(data as { error: string }).error}`,
+    )
     if (res.ok) {
       setResetUsername('')
       setResetPassword('')
@@ -107,7 +107,7 @@ export default function AdminPage() {
     setDeleteResult(null)
     const res = await fetch('/api/admin/users', {
       method: 'DELETE',
-      headers: authHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: deleteUserId }),
     })
     const data = await res.json()
@@ -117,7 +117,7 @@ export default function AdminPage() {
       setDeleteUserId('')
       setConfirmDelete(false)
     } else {
-      setDeleteResult(`✗ ${data.error}`)
+      setDeleteResult(`✗ ${(data as { error: string }).error}`)
     }
   }
 
@@ -126,11 +126,15 @@ export default function AdminPage() {
     setPredResult(null)
     const res = await fetch('/api/admin/predictions', {
       method: 'DELETE',
-      headers: authHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: predUserId, round: predRound }),
     })
     const data = await res.json()
-    setPredResult(res.ok ? `✓ Predicciones de J${predRound} eliminadas.` : `✗ ${data.error}`)
+    setPredResult(
+      res.ok
+        ? `✓ Predicciones de J${predRound} eliminadas.`
+        : `✗ ${(data as { error: string }).error}`,
+    )
   }
 
   async function handleFakeResult() {
@@ -138,7 +142,7 @@ export default function AdminPage() {
     setResultResult(null)
     const res = await fetch('/api/admin/results', {
       method: 'POST',
-      headers: authHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         matchId: resultMatchId,
         homeGoals: Number(resultHome),
@@ -147,16 +151,16 @@ export default function AdminPage() {
       }),
     })
     const data = await res.json()
-    setResultResult(res.ok ? '✓ Resultado guardado.' : `✗ ${data.error}`)
+    setResultResult(res.ok ? '✓ Resultado guardado.' : `✗ ${(data as { error: string }).error}`)
   }
 
   async function handleSync() {
     setSyncResult(null)
     setSyncLoading(true)
     try {
-      const res = await fetch('/api/admin/sync', { method: 'POST', headers: authHeaders() })
+      const res = await fetch('/api/admin/sync', { method: 'POST' })
       const data = await res.json()
-      setSyncResult(res.ok ? '✓ Sync completado.' : `✗ ${data.error}`)
+      setSyncResult(res.ok ? '✓ Sync completado.' : `✗ ${(data as { error: string }).error}`)
     } finally {
       setSyncLoading(false)
     }
@@ -165,7 +169,7 @@ export default function AdminPage() {
   const rounds = [...new Set(matches.map((m) => m.round))].sort()
   const selectedMatch = matches.find((m) => m.id === resultMatchId)
 
-  if (!adminSession) {
+  if (!isAdmin) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center space-y-6">
         <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>
@@ -209,7 +213,15 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6 pt-2">
-      <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>
+        <button
+          onClick={handleLogout}
+          className="text-on-surface-variant hover:text-on-surface text-sm font-medium transition-colors"
+        >
+          Salir
+        </button>
+      </div>
 
       {/* Section tabs */}
       <div className="flex gap-2">

@@ -3,7 +3,7 @@ import { supabaseServer } from '@/infrastructure/supabase/server'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
-  if (!(await verifyAdminSession(request.headers.get('Authorization')))) {
+  if (!verifyAdminSession(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

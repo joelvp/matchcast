@@ -1,38 +1,50 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
 import { supabaseBrowser } from '@/infrastructure/supabase/client'
 import { signOut as authSignOut } from '@/infrastructure/supabase/auth'
 
 type AuthContextType = {
   userId: string | null
   userName: string | null
-  loading: boolean
+  loading: false
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
   userId: null,
   userName: null,
-  loading: true,
+  loading: false,
   signOut: async () => {},
 })
 
+type User = { id: string; name: string } | null
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User>(null)
 
   useEffect(() => {
-    supabaseBrowser.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setLoading(false)
+    // Read session from cookie on mount — no network call
+    supabaseBrowser.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          name: (session.user.user_metadata?.name as string) ?? '',
+        })
+      }
     })
 
     const {
       data: { subscription },
-    } = supabaseBrowser.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession)
+    } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          name: (session.user.user_metadata?.name as string) ?? '',
+        })
+      } else {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -41,9 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        userId: session?.user.id ?? null,
-        userName: (session?.user.user_metadata?.name as string) ?? null,
-        loading,
+        userId: user?.id ?? null,
+        userName: user?.name ?? null,
+        loading: false,
         signOut: authSignOut,
       }}
     >

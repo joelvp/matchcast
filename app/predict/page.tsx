@@ -1,55 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import { PredictionForm } from '@/components/PredictionForm'
 import { useAuth } from '@/components/AuthProvider'
+import { fetcher } from '@/lib/fetcher'
 import type { Match, Prediction, TeamStanding } from '@/domain/types'
 
 export default function PredictPage() {
   const router = useRouter()
-  const { userId, userName, loading: authLoading } = useAuth()
-  const [matches, setMatches] = useState<Match[]>([])
-  const [predictions, setPredictions] = useState<Prediction[]>([])
-  const [teams, setTeams] = useState<Record<number, { shortName: string; shieldUrl?: string }>>({})
-  const [loading, setLoading] = useState(false)
+  const { userId, userName } = useAuth()
+
+  const { data: allMatches, isLoading } = useSWR<Match[]>('/api/matches', fetcher)
+  const { data: standings } = useSWR<TeamStanding[]>('/api/standings', fetcher)
+  const { data: predictions, mutate: mutatePredictions } = useSWR<Prediction[]>(
+    userId ? `/api/predictions?userId=${userId}` : null,
+    fetcher,
+  )
 
   useEffect(() => {
-    if (!authLoading && (!userId || !userName)) {
+    if (!userId || !userName) {
       router.push('/login')
     }
-  }, [authLoading, userId, userName, router])
-
-  useEffect(() => {
-    if (!userId) return
-
-    async function load() {
-      setLoading(true)
-      const [matchesRes, predictionsRes, standingsRes] = await Promise.all([
-        fetch('/api/matches'),
-        fetch(`/api/predictions?userId=${userId}`),
-        fetch('/api/standings'),
-      ])
-      const [matchesData, predictionsData, standingsData] = await Promise.all([
-        matchesRes.json(),
-        predictionsRes.json(),
-        standingsRes.json(),
-      ])
-      setMatches((matchesData as Match[]).filter((m) => m.round >= 5))
-      setPredictions(predictionsData)
-      setTeams(
-        Object.fromEntries(
-          (standingsData as TeamStanding[]).map((s) => [
-            s.teamId,
-            { shortName: s.shortName, shieldUrl: s.shieldUrl },
-          ]),
-        ),
-      )
-      setLoading(false)
-    }
-
-    load()
-  }, [userId])
+  }, [userId, userName, router])
 
   async function handleSave(prediction: Prediction) {
     await fetch('/api/predictions', {
@@ -57,7 +31,10 @@ export default function PredictPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(prediction),
     })
-    setPredictions((prev) => [...prev.filter((p) => p.matchId !== prediction.matchId), prediction])
+    mutatePredictions(
+      (prev) => [...(prev ?? []).filter((p) => p.matchId !== prediction.matchId), prediction],
+      false,
+    )
   }
 
   async function handleDelete(matchId: number) {
@@ -66,10 +43,10 @@ export default function PredictPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, matchId }),
     })
-    setPredictions((prev) => prev.filter((p) => p.matchId !== matchId))
+    mutatePredictions((prev) => (prev ?? []).filter((p) => p.matchId !== matchId), false)
   }
 
-  if (authLoading || loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
@@ -80,8 +57,14 @@ export default function PredictPage() {
     )
   }
 
+  const matches = (allMatches ?? []).filter((m) => m.round >= 5)
+  const preds = predictions ?? []
+  const teams = Object.fromEntries(
+    (standings ?? []).map((s) => [s.teamId, { shortName: s.shortName, shieldUrl: s.shieldUrl }]),
+  )
+
   const pendingCount = matches.filter(
-    (m) => !m.isFinished && !predictions.find((p) => p.matchId === m.id),
+    (m) => !m.isFinished && !preds.find((p) => p.matchId === m.id),
   ).length
   const totalPending = matches.filter((m) => !m.isFinished).length
   const progressPct = totalPending > 0 ? ((totalPending - pendingCount) / totalPending) * 100 : 100
@@ -122,7 +105,7 @@ export default function PredictPage() {
 
       <PredictionForm
         matches={matches}
-        predictions={predictions}
+        predictions={preds}
         onSave={handleSave}
         onDelete={handleDelete}
         userId={userId!}

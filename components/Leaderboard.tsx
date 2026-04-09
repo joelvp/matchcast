@@ -57,7 +57,10 @@ export function Leaderboard({ entries, currentUserId }: Props) {
     <div className="space-y-8">
       {/* Podium */}
       {entries.length >= 2 && (
-        <div className="relative flex items-end justify-center gap-4 rounded-xl pt-12 pb-4">
+        <div
+          className="animate-fade-in-up relative flex items-end justify-center gap-4 rounded-xl pt-12 pb-4"
+          style={{ opacity: 0 }}
+        >
           {/* Subtle gradient background */}
           <div
             className="pointer-events-none absolute inset-0 rounded-xl"
@@ -150,11 +153,12 @@ export function Leaderboard({ entries, currentUserId }: Props) {
           return (
             <div
               key={entry.userId}
-              className={`grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
+              className={`animate-fade-in-up grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
                 isCurrentUser
                   ? 'border-primary bg-primary/5'
                   : 'bg-surface-container-low border-transparent'
               }`}
+              style={{ animationDelay: `${idx * 40}ms`, opacity: 0 }}
             >
               <span className="font-headline text-on-surface-variant font-bold">{idx + 1}</span>
               <div className="flex items-center gap-3">
