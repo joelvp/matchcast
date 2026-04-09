@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
     const error = await res.text()
     return NextResponse.json({ error }, { status: res.status })
   }
+
+  revalidatePath('/')
+  revalidatePath('/results')
 
   return NextResponse.json({ ok: true })
 }

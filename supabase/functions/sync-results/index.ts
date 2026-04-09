@@ -132,8 +132,6 @@ async function scrapeStandings(): Promise<ScrapedStanding[]> {
 Deno.serve(async () => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const appUrl = Deno.env.get('APP_URL')!
-  const adminKey = Deno.env.get('ADMIN_KEY')!
 
   const supabase = createClient(supabaseUrl, serviceKey)
 
@@ -190,13 +188,6 @@ Deno.serve(async () => {
       { onConflict: 'team_id' },
     )
   }
-
-  // Invalidate home page cache
-  await fetch(`${appUrl}/api/revalidate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: adminKey }),
-  })
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json' },
