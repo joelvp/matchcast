@@ -27,10 +27,7 @@ export default function HeaderMenu() {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="text-primary material-symbols-outlined flex h-6 w-6 items-center justify-center leading-none"
-      >
+      <button onClick={() => setOpen((v) => !v)} className="text-primary material-symbols-outlined">
         settings
       </button>
 
