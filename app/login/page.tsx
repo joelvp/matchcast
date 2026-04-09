@@ -21,7 +21,13 @@ export default function LoginPage() {
 
     try {
       if (mode === 'login') {
-        await signIn(name.trim(), password)
+        const user = await signIn(name.trim(), password)
+        // Ensure user exists in our users table (upsert — safe to call every login)
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: user.id, name: name.trim() }),
+        })
         router.push('/predict')
       } else {
         const authUser = await signUp(name.trim(), password)

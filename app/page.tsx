@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { RoundViewer } from '../components/RoundViewer'
 import { StandingsTable } from '../components/StandingsTable'
 import { getMatches } from '../infrastructure/supabase/matchRepository'

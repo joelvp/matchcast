@@ -1,26 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '../../../../infrastructure/supabase/server'
+import { verifyAdminSession } from '../../../../infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
-  // Verify session from Authorization header
-  const authHeader = request.headers.get('Authorization')
-  const token = authHeader?.replace('Bearer ', '')
-
-  if (!token) {
+  if (!(await verifyAdminSession(request.headers.get('Authorization')))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseServer.auth.getUser(token)
-
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (user.email !== 'admin@matchcast.local') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Parse body
