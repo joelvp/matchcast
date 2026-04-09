@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { StandingsTable } from '../../components/StandingsTable'
+import { useAuth } from '../../components/AuthProvider'
 import type { Match, Prediction, TeamStanding } from '../../domain/types'
 import { calculateProjectedStandings } from '../../domain/standings'
 
 export default function StandingsPage() {
-  const [userId, setUserId] = useState<string | null>(null)
+  const { userId, loading: authLoading } = useAuth()
   const [standings, setStandings] = useState<TeamStanding[]>([])
   const [projected, setProjected] = useState<TeamStanding[]>([])
   const [matches, setMatches] = useState<Match[]>([])
@@ -14,10 +15,9 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const storedId = localStorage.getItem('matchcast_user_id')
-    setUserId(storedId)
+    if (authLoading) return
 
-    if (!storedId) {
+    if (!userId) {
       setLoading(false)
       return
     }
@@ -26,7 +26,7 @@ export default function StandingsPage() {
       const [standingsRes, matchesRes, predictionsRes] = await Promise.all([
         fetch('/api/standings'),
         fetch('/api/matches'),
-        fetch(`/api/predictions?userId=${storedId}`),
+        fetch(`/api/predictions?userId=${userId}`),
       ])
       const [standingsData, matchesData, predictionsData]: [TeamStanding[], Match[], Prediction[]] =
         await Promise.all([standingsRes.json(), matchesRes.json(), predictionsRes.json()])
@@ -41,7 +41,7 @@ export default function StandingsPage() {
     }
 
     load()
-  }, [])
+  }, [authLoading, userId])
 
   const hasProjection = projected.length > 0
 

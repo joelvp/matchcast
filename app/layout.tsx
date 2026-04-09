@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import BottomNav from '@/components/BottomNav'
+import { AuthProvider } from '@/components/AuthProvider'
+import HeaderMenu from '@/components/HeaderMenu'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -34,14 +36,16 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface flex min-h-full flex-col">
-        <header className="bg-surface sticky top-0 z-50 flex items-center justify-between px-6 py-4">
-          <span className="font-headline text-primary-container text-2xl font-black tracking-tighter">
-            QUINIELA DHB
-          </span>
-          <span className="material-symbols-outlined text-primary">settings</span>
-        </header>
-        <main className="mx-auto w-full max-w-md flex-1 px-4 pt-2 pb-24">{children}</main>
-        <BottomNav />
+        <AuthProvider>
+          <header className="bg-surface sticky top-0 z-50 flex items-center justify-between px-6 py-4">
+            <span className="font-headline text-primary-container text-2xl font-black tracking-tighter">
+              QUINIELA DHB
+            </span>
+            <HeaderMenu />
+          </header>
+          <main className="mx-auto w-full max-w-md flex-1 px-4 pt-2 pb-24">{children}</main>
+          <BottomNav />
+        </AuthProvider>
       </body>
     </html>
   )

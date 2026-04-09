@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '../../domain/types'
 import { scorePrediction } from '../../domain/leaderboard'
 import { getCurrentRound } from '../../domain/rounds'
+import { useAuth } from '../../components/AuthProvider'
 
 type ScoredMatch = {
   match: Match
@@ -12,7 +13,7 @@ type ScoredMatch = {
 }
 
 export default function MyRoundPage() {
-  const [userId, setUserId] = useState<string | null>(null)
+  const { userId, loading: authLoading } = useAuth()
   const [showHelp, setShowHelp] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
@@ -23,10 +24,6 @@ export default function MyRoundPage() {
   const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(null)
   const [selectedPredictions, setSelectedPredictions] = useState<Prediction[]>([])
   const [loadingModal, setLoadingModal] = useState(false)
-
-  useEffect(() => {
-    setUserId(localStorage.getItem('matchcast_user_id'))
-  }, [])
 
   useEffect(() => {
     if (!userId) return
@@ -52,7 +49,7 @@ export default function MyRoundPage() {
     }
 
     load()
-  }, [userId])
+  }, [authLoading, userId])
 
   useEffect(() => {
     if (!activeRound) return
@@ -62,7 +59,7 @@ export default function MyRoundPage() {
       .catch(() => {})
   }, [activeRound])
 
-  if (!userId) {
+  if (!authLoading && !userId) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
         <span
@@ -71,10 +68,7 @@ export default function MyRoundPage() {
         >
           sports
         </span>
-        <p className="text-on-surface-variant text-sm">
-          Regístrate en <span className="text-primary font-bold">Predecir</span> para ver tu
-          jornada.
-        </p>
+        <p className="text-on-surface-variant text-sm">Inicia sesión para ver tu jornada.</p>
       </div>
     )
   }

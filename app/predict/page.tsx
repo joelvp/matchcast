@@ -1,23 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { PredictionForm } from '../../components/PredictionForm'
+import { useAuth } from '../../components/AuthProvider'
 import type { Match, Prediction, TeamStanding } from '../../domain/types'
 
 export default function PredictPage() {
-  const [userId, setUserId] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string>('')
-  const [nameInput, setNameInput] = useState('')
+  const router = useRouter()
+  const { userId, userName, loading: authLoading } = useAuth()
   const [matches, setMatches] = useState<Match[]>([])
   const [predictions, setPredictions] = useState<Prediction[]>([])
   const [teams, setTeams] = useState<Record<number, { shortName: string; shieldUrl?: string }>>({})
   const [loading, setLoading] = useState(false)
 
-  // Read localStorage only on the client (avoids SSR/client hydration mismatch)
   useEffect(() => {
-    setUserId(localStorage.getItem('matchcast_user_id'))
-    setUserName(localStorage.getItem('matchcast_user_name') ?? '')
-  }, [])
+    if (!authLoading && (!userId || !userName)) {
+      router.push('/login')
+    }
+  }, [authLoading, userId, userName, router])
 
   useEffect(() => {
     if (!userId) return
@@ -50,21 +51,6 @@ export default function PredictPage() {
     load()
   }, [userId])
 
-  async function handleRegister() {
-    if (!nameInput.trim()) return
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: nameInput.trim() }),
-    })
-    if (!res.ok) return
-    const user = await res.json()
-    localStorage.setItem('matchcast_user_id', user.id)
-    localStorage.setItem('matchcast_user_name', user.name)
-    setUserId(user.id)
-    setUserName(user.name)
-  }
-
   async function handleSave(prediction: Prediction) {
     await fetch('/api/predictions', {
       method: 'POST',
@@ -83,41 +69,7 @@ export default function PredictPage() {
     setPredictions((prev) => prev.filter((p) => p.matchId !== matchId))
   }
 
-  if (!userId) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-6 text-center">
-        <div>
-          <h1 className="font-headline text-4xl font-extrabold tracking-tighter uppercase">
-            ¿Cómo te
-            <br />
-            <span className="text-primary">llamas?</span>
-          </h1>
-          <p className="text-on-surface-variant mt-2 text-sm">
-            Usaremos tu nombre para el marcador.
-          </p>
-        </div>
-        <div className="w-full max-w-xs space-y-3">
-          <input
-            type="text"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
-            placeholder="Tu nombre"
-            className="font-body bg-surface-container-high text-on-surface placeholder:text-on-surface-variant focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
-          />
-          <button
-            onClick={handleRegister}
-            disabled={!nameInput.trim()}
-            className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-40"
-          >
-            Entrar
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
@@ -173,7 +125,7 @@ export default function PredictPage() {
         predictions={predictions}
         onSave={handleSave}
         onDelete={handleDelete}
-        userId={userId}
+        userId={userId!}
         teams={teams}
       />
     </div>
