@@ -51,7 +51,7 @@ export function Leaderboard({ entries, currentUserId }: Props) {
     )
   }
 
-  const [first, second, third, ...rest] = entries
+  const [first, second, third] = entries
 
   return (
     <div className="space-y-8">
@@ -137,90 +137,44 @@ export function Leaderboard({ entries, currentUserId }: Props) {
         </div>
       )}
 
-      {/* Ranking list (4th+) */}
-      {rest.length > 0 && (
-        <div className="space-y-3">
-          {/* Header */}
-          <div className="text-on-surface-variant/60 grid grid-cols-[40px_1fr_100px_64px] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-            <span>#Pos</span>
-            <span>Participante</span>
-            <span className="text-center">Forma</span>
-            <span className="text-right">Pts</span>
-          </div>
-
-          {rest.map((entry, idx) => {
-            const pos = idx + 4
-            const isCurrentUser = entry.userId === currentUserId
-            return (
-              <div
-                key={entry.userId}
-                className={`grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
-                  isCurrentUser
-                    ? 'border-primary bg-primary/5'
-                    : 'bg-surface-container-low border-transparent'
-                }`}
-              >
-                <span className="font-headline text-on-surface-variant font-bold">{pos}</span>
-                <div className="flex items-center gap-3">
-                  <Avatar name={entry.userName} size="sm" />
-                  <span className="font-headline text-on-surface truncate font-bold">
-                    {entry.userName}
-                  </span>
-                </div>
-                <div className="flex justify-center gap-1">
-                  {entry.breakdown.map((b) => (
-                    <FormBadge key={b.matchId} points={b.points} />
-                  ))}
-                </div>
-                <span className="font-headline text-on-surface text-right font-bold tabular-nums">
-                  {entry.totalPoints}
+      {/* Full ranking list */}
+      <div className="space-y-3">
+        <div className="text-on-surface-variant/60 grid grid-cols-[40px_1fr_100px_64px] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+          <span>#Pos</span>
+          <span>Participante</span>
+          <span className="text-center">Forma</span>
+          <span className="text-right">Pts</span>
+        </div>
+        {entries.map((entry, idx) => {
+          const isCurrentUser = entry.userId === currentUserId
+          return (
+            <div
+              key={entry.userId}
+              className={`grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
+                isCurrentUser
+                  ? 'border-primary bg-primary/5'
+                  : 'bg-surface-container-low border-transparent'
+              }`}
+            >
+              <span className="font-headline text-on-surface-variant font-bold">{idx + 1}</span>
+              <div className="flex items-center gap-3">
+                <Avatar name={entry.userName} size="sm" />
+                <span className="font-headline text-on-surface truncate font-bold">
+                  {entry.userName}
                 </span>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Top 3 also in list if there are no rest items OR always show full list */}
-      {rest.length === 0 && entries.length > 0 && entries.length < 4 && (
-        <div className="space-y-3">
-          <div className="text-on-surface-variant/60 grid grid-cols-[40px_1fr_100px_64px] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-            <span>#Pos</span>
-            <span>Participante</span>
-            <span className="text-center">Forma</span>
-            <span className="text-right">Pts</span>
-          </div>
-          {entries.map((entry, idx) => {
-            const isCurrentUser = entry.userId === currentUserId
-            return (
-              <div
-                key={entry.userId}
-                className={`grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
-                  isCurrentUser
-                    ? 'border-primary bg-primary/5'
-                    : 'bg-surface-container-low border-transparent'
-                }`}
-              >
-                <span className="font-headline text-on-surface-variant font-bold">{idx + 1}</span>
-                <div className="flex items-center gap-3">
-                  <Avatar name={entry.userName} size="sm" />
-                  <span className="font-headline text-on-surface truncate font-bold">
-                    {entry.userName}
-                  </span>
-                </div>
-                <div className="flex justify-center gap-1">
-                  {entry.breakdown.map((b) => (
-                    <FormBadge key={b.matchId} points={b.points} />
-                  ))}
-                </div>
-                <span className="font-headline text-on-surface text-right font-bold tabular-nums">
-                  {entry.totalPoints}
-                </span>
+              <div className="flex justify-center gap-1">
+                {entry.breakdown.map((b) => (
+                  <FormBadge key={b.matchId} points={b.points} />
+                ))}
               </div>
-            )
-          })}
-        </div>
-      )}
+              <span className="font-headline text-on-surface text-right font-bold tabular-nums">
+                {entry.totalPoints}
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
