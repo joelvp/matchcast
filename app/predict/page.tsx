@@ -59,7 +59,16 @@ export default function PredictPage() {
     )
   }
 
-  if (!userId) return null
+  if (!userId) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="space-y-2 text-center">
+          <div className="font-headline text-primary-container text-4xl font-black">•••</div>
+          <p className="text-on-surface-variant text-sm">Cargando partidos…</p>
+        </div>
+      </div>
+    )
+  }
 
   const matches = (allMatches ?? []).filter((m) => m.round >= 5)
   const preds = predictions ?? []
