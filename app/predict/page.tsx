@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { PredictionForm } from '@/components/PredictionForm'
@@ -20,12 +19,6 @@ export default function PredictPage() {
     ready ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
-
-  useEffect(() => {
-    if (!authLoading && (!userId || !userName)) {
-      router.push('/login')
-    }
-  }, [authLoading, userId, userName, router])
 
   async function handleSave(prediction: Prediction) {
     await fetch('/api/predictions', {
@@ -61,11 +54,22 @@ export default function PredictPage() {
 
   if (!userId) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="space-y-2 text-center">
-          <div className="font-headline text-primary-container text-4xl font-black">•••</div>
-          <p className="text-on-surface-variant text-sm">Cargando partidos…</p>
-        </div>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 text-center">
+        <span
+          className="material-symbols-outlined text-on-surface-variant text-4xl"
+          style={{ fontVariationSettings: "'FILL' 0" }}
+        >
+          sports_hockey
+        </span>
+        <p className="text-on-surface-variant text-sm">
+          Inicia sesión para predecir los resultados.
+        </p>
+        <button
+          onClick={() => router.push('/login')}
+          className="font-headline bg-primary-container text-on-primary-fixed rounded-xl px-6 py-3 font-extrabold tracking-widest uppercase"
+        >
+          Entrar
+        </button>
       </div>
     )
   }
