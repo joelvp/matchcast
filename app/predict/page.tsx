@@ -12,13 +12,12 @@ export default function PredictPage() {
   const router = useRouter()
   const { userId, userName, loading: authLoading } = useAuth()
 
-  const { data: allMatches, isLoading } = useSWR<Match[]>(
-    authLoading ? null : '/api/matches',
-    fetcher,
-  )
-  const { data: standings } = useSWR<TeamStanding[]>(authLoading ? null : '/api/standings', fetcher)
+  const ready = !authLoading && !!userId
+
+  const { data: allMatches, isLoading } = useSWR<Match[]>(ready ? '/api/matches' : null, fetcher)
+  const { data: standings } = useSWR<TeamStanding[]>(ready ? '/api/standings' : null, fetcher)
   const { data: predictions, mutate: mutatePredictions } = useSWR<Prediction[]>(
-    userId ? `/api/predictions?userId=${userId}` : null,
+    ready ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
 
