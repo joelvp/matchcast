@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { supabaseBrowser } from '@/infrastructure/supabase/client'
 import type { Match } from '@/domain/types'
 
 type User = { id: string; name: string }
 type Section = 'users' | 'predictions' | 'results' | 'sync'
 
 export default function AdminPage() {
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
@@ -44,26 +45,32 @@ export default function AdminPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [syncLoading, setSyncLoading] = useState(false)
 
+  function adminFetch(url: string, options: RequestInit = {}) {
+    return fetch(url, {
+      ...options,
+      headers: { ...options.headers, Authorization: `Bearer ${token}` },
+    })
+  }
+
   async function handleLogin() {
     if (!password) return
     setLoginError(null)
     setLoginLoading(true)
     try {
-      const res = await fetch('/api/admin/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
+        email: 'admin@matchcast.local',
+        password,
       })
-      if (!res.ok) {
-        const data = await res.json()
-        setLoginError((data as { error: string }).error)
+      if (error || !data.session) {
+        setLoginError('Contraseña incorrecta.')
         return
       }
 
-      setIsAdmin(true)
+      const accessToken = data.session.access_token
+      setToken(accessToken)
 
       const [usersRes, matchesRes] = await Promise.all([
-        fetch('/api/admin/users'),
+        fetch('/api/admin/users', { headers: { Authorization: `Bearer ${accessToken}` } }),
         fetch('/api/matches'),
       ])
       const [usersData, matchesData] = await Promise.all([usersRes.json(), matchesRes.json()])
@@ -76,8 +83,8 @@ export default function AdminPage() {
   }
 
   async function handleLogout() {
-    await fetch('/api/admin/auth', { method: 'DELETE' })
-    setIsAdmin(false)
+    await supabaseBrowser.auth.signOut()
+    setToken(null)
     setPassword('')
     setDataLoaded(false)
   }
@@ -85,7 +92,7 @@ export default function AdminPage() {
   async function handleResetPassword() {
     if (!resetUsername.trim() || !resetPassword) return
     setResetResult(null)
-    const res = await fetch('/api/admin/reset-password', {
+    const res = await adminFetch('/api/admin/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: resetUsername.trim(), newPassword: resetPassword }),
@@ -105,7 +112,7 @@ export default function AdminPage() {
   async function handleDeleteUser() {
     if (!deleteUserId || !confirmDelete) return
     setDeleteResult(null)
-    const res = await fetch('/api/admin/users', {
+    const res = await adminFetch('/api/admin/users', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: deleteUserId }),
@@ -124,7 +131,7 @@ export default function AdminPage() {
   async function handleDeletePredictions() {
     if (!predUserId) return
     setPredResult(null)
-    const res = await fetch('/api/admin/predictions', {
+    const res = await adminFetch('/api/admin/predictions', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: predUserId, round: predRound }),
@@ -140,7 +147,7 @@ export default function AdminPage() {
   async function handleFakeResult() {
     if (resultMatchId === '' || resultHome === '' || resultAway === '') return
     setResultResult(null)
-    const res = await fetch('/api/admin/results', {
+    const res = await adminFetch('/api/admin/results', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -158,7 +165,7 @@ export default function AdminPage() {
     setSyncResult(null)
     setSyncLoading(true)
     try {
-      const res = await fetch('/api/admin/sync', { method: 'POST' })
+      const res = await adminFetch('/api/admin/sync', { method: 'POST' })
       const data = await res.json()
       setSyncResult(res.ok ? '✓ Sync completado.' : `✗ ${(data as { error: string }).error}`)
     } finally {
@@ -169,7 +176,7 @@ export default function AdminPage() {
   const rounds = [...new Set(matches.map((m) => m.round))].sort()
   const selectedMatch = matches.find((m) => m.id === resultMatchId)
 
-  if (!isAdmin) {
+  if (!token) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center space-y-6">
         <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>

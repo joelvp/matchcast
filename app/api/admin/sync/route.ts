@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
-  if (!verifyAdminSession(request)) {
+  if (!(await verifyAdminSession(request.headers.get('Authorization')))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

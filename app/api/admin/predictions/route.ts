@@ -3,7 +3,7 @@ import { supabaseServer } from '@/infrastructure/supabase/server'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function DELETE(request: NextRequest) {
-  if (!verifyAdminSession(request)) {
+  if (!(await verifyAdminSession(request.headers.get('Authorization')))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

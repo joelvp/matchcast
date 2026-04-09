@@ -1,6 +1,14 @@
-import type { NextRequest } from 'next/server'
+import { supabaseServer } from './server'
 
-export function verifyAdminSession(request: NextRequest): boolean {
-  const cookie = request.cookies.get('admin_session')
-  return !!process.env.ADMIN_KEY && cookie?.value === process.env.ADMIN_KEY
+export async function verifyAdminSession(authHeader: string | null): Promise<boolean> {
+  const token = authHeader?.replace('Bearer ', '')
+  if (!token) return false
+
+  const {
+    data: { user },
+    error,
+  } = await supabaseServer.auth.getUser(token)
+
+  if (error || !user) return false
+  return user.email === 'admin@matchcast.local'
 }
