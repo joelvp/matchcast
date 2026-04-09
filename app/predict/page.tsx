@@ -42,7 +42,7 @@ export default function PredictPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <div className="space-y-2 text-center">
           <div className="font-headline text-primary-container text-4xl font-black">•••</div>
           <p className="text-on-surface-variant text-sm">Cargando partidos…</p>
