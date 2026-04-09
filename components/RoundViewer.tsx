@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { MatchCard } from './MatchCard'
-import { getCurrentRound } from '../domain/rounds'
-import type { Match } from '../domain/types'
+import { getCurrentRound } from '@/domain/rounds'
+import type { Match } from '@/domain/types'
 
 type TeamInfo = { shortName: string; shieldUrl?: string }
 

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCurrentRound } from '../domain/rounds'
-import type { Match, Prediction } from '../domain/types'
+import { getCurrentRound } from '@/domain/rounds'
+import type { Match, Prediction } from '@/domain/types'
 
 type TeamInfo = { shortName: string; shieldUrl?: string }
 

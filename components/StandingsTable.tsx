@@ -1,4 +1,4 @@
-import type { TeamStanding } from '../domain/types'
+import type { TeamStanding } from '@/domain/types'
 
 type Props = {
   standings: TeamStanding[]

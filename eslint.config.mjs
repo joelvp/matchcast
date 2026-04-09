@@ -9,6 +9,17 @@ const eslintConfig = defineConfig([
   prettier,
   {
     rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.\\.',
+              message: 'Use @/ path alias instead of relative imports',
+            },
+          ],
+        },
+      ],
       // False positive in App Router: the rule targets Pages Router's _document.js
       '@next/next/no-page-custom-font': 'off',
       // Reading localStorage on mount to avoid SSR/client hydration mismatch is the

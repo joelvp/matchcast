@@ -1,4 +1,4 @@
-import type { User } from '../../domain/types'
+import type { User } from '@/domain/types'
 import { supabaseServer } from './server'
 
 export async function getOrCreateUser(id: string, name: string): Promise<User> {

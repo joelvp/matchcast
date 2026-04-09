@@ -1,5 +1,7 @@
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
-import { getMatches } from '../../../infrastructure/supabase/matchRepository'
+import { getMatches } from '@/infrastructure/supabase/matchRepository'
 
 export async function GET() {
   try {

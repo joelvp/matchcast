@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '../../domain/types'
-import { scorePrediction } from '../../domain/leaderboard'
-import { getCurrentRound } from '../../domain/rounds'
+import useSWR from 'swr'
+import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '@/domain/types'
+import { scorePrediction } from '@/domain/leaderboard'
+import { getCurrentRound } from '@/domain/rounds'
+import { useAuth } from '@/components/AuthProvider'
+import { fetcher } from '@/lib/fetcher'
 
 type ScoredMatch = {
   match: Match
@@ -12,55 +15,47 @@ type ScoredMatch = {
 }
 
 export default function MyRoundPage() {
-  const [userId, setUserId] = useState<string | null>(null)
+  const { userId, loading: authLoading } = useAuth()
   const [showHelp, setShowHelp] = useState(false)
-  const [matches, setMatches] = useState<Match[]>([])
-  const [predictions, setPredictions] = useState<Prediction[]>([])
-  const [teams, setTeams] = useState<Record<number, string>>({})
-  const [loading, setLoading] = useState(false)
   const [activeRound, setActiveRound] = useState<number | null>(null)
-  const [roundRanking, setRoundRanking] = useState<LeaderboardEntry[]>([])
   const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(null)
   const [selectedPredictions, setSelectedPredictions] = useState<Prediction[]>([])
   const [loadingModal, setLoadingModal] = useState(false)
 
+  const { data: allMatches, isLoading } = useSWR<Match[]>(
+    !authLoading ? '/api/matches' : null,
+    fetcher,
+  )
+  const { data: standings } = useSWR<TeamStanding[]>(
+    !authLoading ? '/api/standings' : null,
+    fetcher,
+  )
+  const { data: predictions } = useSWR<Prediction[]>(
+    !authLoading && userId ? `/api/predictions?userId=${userId}` : null,
+    fetcher,
+  )
+  const { data: roundRanking } = useSWR<LeaderboardEntry[]>(
+    activeRound ? `/api/leaderboard?round=${activeRound}` : null,
+    fetcher,
+  )
+
+  // Set active round once matches load
   useEffect(() => {
-    setUserId(localStorage.getItem('matchcast_user_id'))
-  }, [])
+    if (!allMatches) return
+    const predictable = allMatches.filter((m) => m.round >= 5)
+    const rounds = [...new Set(predictable.map((m) => m.round))].sort()
+    setActiveRound(
+      (prev) => prev ?? (rounds.length > 0 ? getCurrentRound(rounds, predictable) : null),
+    )
+  }, [allMatches])
 
-  useEffect(() => {
-    if (!userId) return
-
-    async function load() {
-      setLoading(true)
-      const [matchesRes, predictionsRes, standingsRes] = await Promise.all([
-        fetch('/api/matches'),
-        fetch(`/api/predictions?userId=${userId}`),
-        fetch('/api/standings'),
-      ])
-      const [matchesData, predictionsData, standingsData]: [Match[], Prediction[], TeamStanding[]] =
-        await Promise.all([matchesRes.json(), predictionsRes.json(), standingsRes.json()])
-
-      const predictableMatches = matchesData.filter((m) => m.round >= 5)
-      setMatches(predictableMatches)
-      setPredictions(predictionsData)
-      setTeams(Object.fromEntries(standingsData.map((s) => [s.teamId, s.shortName])))
-
-      const rounds = [...new Set(predictableMatches.map((m) => m.round))].sort()
-      setActiveRound(rounds.length > 0 ? getCurrentRound(rounds, predictableMatches) : null)
-      setLoading(false)
-    }
-
-    load()
-  }, [userId])
-
-  useEffect(() => {
-    if (!activeRound) return
-    fetch(`/api/leaderboard?round=${activeRound}`)
-      .then((r) => r.json())
-      .then(setRoundRanking)
-      .catch(() => {})
-  }, [activeRound])
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="font-headline text-primary-container text-4xl font-black">•••</div>
+      </div>
+    )
+  }
 
   if (!userId) {
     return (
@@ -71,21 +66,14 @@ export default function MyRoundPage() {
         >
           sports
         </span>
-        <p className="text-on-surface-variant text-sm">
-          Regístrate en <span className="text-primary font-bold">Predecir</span> para ver tu
-          jornada.
-        </p>
+        <p className="text-on-surface-variant text-sm">Inicia sesión para ver tu jornada.</p>
       </div>
     )
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="font-headline text-primary-container text-4xl font-black">•••</div>
-      </div>
-    )
-  }
+  const matches = (allMatches ?? []).filter((m) => m.round >= 5)
+  const preds = predictions ?? []
+  const teams = Object.fromEntries((standings ?? []).map((s) => [s.teamId, s.shortName]))
 
   const rounds = [...new Set(matches.map((m) => m.round))].sort()
   const activeIdx = activeRound ? rounds.indexOf(activeRound) : -1
@@ -94,7 +82,7 @@ export default function MyRoundPage() {
 
   const roundMatches = activeRound ? matches.filter((m) => m.round === activeRound) : []
   const scored: ScoredMatch[] = roundMatches.map((match) => {
-    const prediction = predictions.find((p) => p.matchId === match.id)
+    const prediction = preds.find((p) => p.matchId === match.id)
     if (!prediction || !match.isFinished || match.homeGoals === null || match.awayGoals === null) {
       return { match, prediction, points: null }
     }
@@ -462,13 +450,13 @@ export default function MyRoundPage() {
       </section>
 
       {/* Mini-ranking de la jornada */}
-      {roundRanking.length > 0 && roundMatches.some((m) => m.isFinished) && (
+      {(roundRanking ?? []).length > 0 && roundMatches.some((m) => m.isFinished) && (
         <section>
           <h2 className="font-headline mb-4 text-2xl font-bold tracking-tight">
             Ranking J{activeRound}
           </h2>
           <div className="space-y-2">
-            {roundRanking.map((entry, idx) => {
+            {(roundRanking ?? []).map((entry, idx) => {
               const isMe = entry.userId === userId
               const initials = entry.userName
                 .split(' ')
