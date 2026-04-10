@@ -2,9 +2,17 @@ import type { User } from '@/domain/types'
 import { supabaseServer } from './server'
 
 export async function getOrCreateUser(id: string, name: string): Promise<User> {
+  const { data: existing } = await supabaseServer
+    .from('users')
+    .select('id, name')
+    .eq('id', id)
+    .single()
+
+  if (existing) return { id: existing.id, name: existing.name }
+
   const { data, error } = await supabaseServer
     .from('users')
-    .upsert({ id, name }, { onConflict: 'id' })
+    .insert({ id, name })
     .select('id, name')
     .single()
 

@@ -1,5 +1,15 @@
 import type { Match } from './types'
 
+/** Noon (12:00) Madrid time on the first match day of the round — predictions lock here. */
+export function getRoundDeadline(roundMatches: Match[]): Date {
+  const earliest = roundMatches.reduce(
+    (min, m) => (m.matchDate < min ? m.matchDate : min),
+    roundMatches[0].matchDate,
+  )
+  const dateStr = new Date(earliest).toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })
+  return new Date(`${dateStr}T12:00:00+02:00`)
+}
+
 /**
  * Returns the Monday 00:00 Madrid time after the last match of a round.
  * The UI stays on a round until this moment, so users can review results

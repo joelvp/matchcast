@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import type { LeaderboardEntry, Match, Prediction, TeamStanding } from '@/domain/types'
 import { scorePrediction } from '@/domain/leaderboard'
-import { getCurrentRound } from '@/domain/rounds'
+import { getCurrentRound, getRoundDeadline } from '@/domain/rounds'
 import { useAuth } from '@/components/AuthProvider'
 import { fetcher } from '@/lib/fetcher'
 
@@ -34,8 +34,13 @@ export default function MyRoundPage() {
     !authLoading && userId ? `/api/predictions?userId=${userId}` : null,
     fetcher,
   )
+  const roundMatchesForSWR = activeRound
+    ? (allMatches ?? []).filter((m) => m.round === activeRound)
+    : []
+  const deadlinePassed =
+    roundMatchesForSWR.length > 0 && new Date() > getRoundDeadline(roundMatchesForSWR)
   const { data: roundRanking } = useSWR<LeaderboardEntry[]>(
-    activeRound ? `/api/leaderboard?round=${activeRound}` : null,
+    activeRound && deadlinePassed ? `/api/leaderboard?round=${activeRound}` : null,
     fetcher,
   )
 
@@ -450,7 +455,7 @@ export default function MyRoundPage() {
       </section>
 
       {/* Mini-ranking de la jornada */}
-      {(roundRanking ?? []).length > 0 && roundMatches.some((m) => m.isFinished) && (
+      {(roundRanking ?? []).length > 0 && deadlinePassed && (
         <section>
           <h2 className="font-headline mb-4 text-2xl font-bold tracking-tight">
             Ranking J{activeRound}

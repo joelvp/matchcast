@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCurrentRound } from '@/domain/rounds'
+import { getCurrentRound, getRoundDeadline } from '@/domain/rounds'
 import type { Match, Prediction } from '@/domain/types'
 
 type TeamInfo = { shortName: string; shieldUrl?: string }
@@ -18,16 +18,6 @@ type Props = {
 type ScoreInput = { home: string; away: string }
 
 type Participant = { userId: string; userName: string; count: number; total: number }
-
-/** Noon (12:00) on the first match day of the round, in Spain time */
-function getRoundDeadline(roundMatches: Match[]): Date {
-  const earliest = roundMatches.reduce(
-    (min, m) => (m.matchDate < min ? m.matchDate : min),
-    roundMatches[0].matchDate,
-  )
-  const dateStr = new Date(earliest).toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })
-  return new Date(`${dateStr}T12:00:00+02:00`)
-}
 
 function formatDeadline(date: Date): string {
   return date.toLocaleDateString('es-ES', {
@@ -526,7 +516,7 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
           </p>
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              {participants.slice(0, 5).map((p) => (
+              {participants.slice(0, 3).map((p) => (
                 <div
                   key={p.userId}
                   className="bg-surface-container-highest font-headline border-surface flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-black"
@@ -539,18 +529,19 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
                     .toUpperCase()}
                 </div>
               ))}
-              {participants.length > 5 && (
+              {participants.length > 3 && (
                 <div className="bg-surface-container-high border-surface text-on-surface-variant flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-bold">
-                  +{participants.length - 5}
+                  +{participants.length - 3}
                 </div>
               )}
             </div>
             <span className="text-on-surface-variant text-sm">
               {participants.length === 1
                 ? `${participants[0].userName} ya ha predicho`
-                : participants.length === 2
-                  ? `${participants[0].userName} y ${participants[1].userName}`
-                  : `${participants[0].userName} y ${participants.length - 1} más`}
+                : `${participants
+                    .slice(0, -1)
+                    .map((p) => p.userName)
+                    .join(', ')} y ${participants[participants.length - 1].userName}`}
             </span>
           </div>
         </div>
