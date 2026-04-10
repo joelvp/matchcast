@@ -11,22 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - run: npm ci
-
       - run: npx tsc --noEmit
-
       - run: npm run lint
-
       - run: npm run format:check
-
       - run: npm run test
-
       - run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -36,6 +30,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: check
+    permissions:
+      pull-requests: write
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -45,16 +41,73 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pull Vercel Environment Information (Preview)
-        if: github.ref != 'refs/heads/main'
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Set Vercel environment flags
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "VERCEL_ENV=production" >> $GITHUB_ENV
+            echo "VERCEL_PROD_FLAG=--prod" >> $GITHUB_ENV
+          else
+            echo "VERCEL_ENV=preview" >> $GITHUB_ENV
+            echo "VERCEL_PROD_FLAG=" >> $GITHUB_ENV
+          fi
 
-      - name: Pull Vercel Environment Information (Production)
-        if: github.ref == 'refs/heads/main'
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=$VERCEL_ENV --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        run: vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build $VERCEL_PROD_FLAG --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        id: deploy-vercel
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt $VERCEL_PROD_FLAG --token=${{ secrets.VERCEL_TOKEN }} | tail -n 1)
+          echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with Preview URL
+        if: github.event_name == 'pull_request' && success()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            🚀 **Preview Deployment Ready!**
+
+            You can test the changes here: ${{ steps.deploy-vercel.outputs.url }}
+
+            _This deployment was automatically generated via GitHub Actions._
+
+      - name: Production Success Marker
+        if: github.ref == 'refs/heads/main' && success()
+        run: echo "Production deployment completed successfully."
+
+  release:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(jq -r .version package.json)" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          if git ls-remote --tags origin "refs/tags/v${{ steps.pkg.outputs.version }}" | grep -q .; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Warn if tag already exists
+        if: steps.tag_check.outputs.exists == 'true'
+        run: echo "::warning::Tag v${{ steps.pkg.outputs.version }} already exists. No release was created. Did you forget to bump the version in package.json?"
+
+      - name: Create release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          generate_release_notes: true
