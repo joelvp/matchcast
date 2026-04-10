@@ -161,7 +161,7 @@ export function Leaderboard({ entries, currentUserId }: Props) {
               style={{ animationDelay: `${idx * 40}ms`, opacity: 0 }}
             >
               <span className="font-headline text-on-surface-variant font-bold">{idx + 1}</span>
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <Avatar name={entry.userName} size="sm" />
                 <span className="font-headline text-on-surface truncate font-bold">
                   {entry.userName}

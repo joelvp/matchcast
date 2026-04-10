@@ -10,5 +10,5 @@ export async function verifyAdminSession(authHeader: string | null): Promise<boo
   } = await supabaseServer.auth.getUser(token)
 
   if (error || !user) return false
-  return user.email === 'admin@matchcast.local'
+  return user.id === process.env.ADMIN_USER_ID
 }
