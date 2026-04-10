@@ -1,22 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/infrastructure/supabase/client'
+import { useAuth } from '@/components/AuthProvider'
 import type { Match } from '@/domain/types'
 
 type User = { id: string; name: string }
 type Section = 'users' | 'predictions' | 'results' | 'sync'
 
+const ADMIN_ELEVATION_KEY = 'admin_elevated'
+
+function isElevated(): boolean {
+  try {
+    return sessionStorage.getItem(ADMIN_ELEVATION_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function setElevated() {
+  sessionStorage.setItem(ADMIN_ELEVATION_KEY, 'true')
+}
+
+function clearElevated() {
+  sessionStorage.removeItem(ADMIN_ELEVATION_KEY)
+}
+
 export default function AdminPage() {
-  const [token, setToken] = useState<string | null>(null)
-  const [password, setPassword] = useState('')
-  const [loginError, setLoginError] = useState<string | null>(null)
-  const [loginLoading, setLoginLoading] = useState(false)
+  const { userId, loading: authLoading } = useAuth()
+  const router = useRouter()
+  const isAdminUser = userId === process.env.NEXT_PUBLIC_ADMIN_USER_ID
+
+  const [elevated, setElevatedState] = useState(false)
+  const [pin, setPin] = useState('')
+  const [pinError, setPinError] = useState<string | null>(null)
+  const [pinLoading, setPinLoading] = useState(false)
   const [activeSection, setActiveSection] = useState<Section>('users')
 
   // Data
   const [users, setUsers] = useState<User[]>([])
   const [matches, setMatches] = useState<Match[]>([])
+  const [teams, setTeams] = useState<Record<number, string>>({})
   const [dataLoaded, setDataLoaded] = useState(false)
 
   // Reset password
@@ -34,6 +59,15 @@ export default function AdminPage() {
   const [predRound, setPredRound] = useState<number>(5)
   const [predResult, setPredResult] = useState<string | null>(null)
 
+  // Edit predictions
+  type PredictionInput = { matchId: number; home: string; away: string }
+  const [editUserId, setEditUserId] = useState('')
+  const [editRound, setEditRound] = useState<number>(5)
+  const [editPreds, setEditPreds] = useState<PredictionInput[]>([])
+  const [editLoaded, setEditLoaded] = useState(false)
+  const [editResult, setEditResult] = useState<string | null>(null)
+  const [editSaving, setEditSaving] = useState(false)
+
   // Fake results
   const [resultMatchId, setResultMatchId] = useState<number | ''>('')
   const [resultHome, setResultHome] = useState('')
@@ -45,48 +79,82 @@ export default function AdminPage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [syncLoading, setSyncLoading] = useState(false)
 
-  function adminFetch(url: string, options: RequestInit = {}) {
+  // Restore elevation from sessionStorage on mount, clear on unmount
+  useEffect(() => {
+    if (isElevated()) setElevatedState(true)
+    return () => clearElevated()
+  }, [])
+
+  const loadData = useCallback(async (token: string) => {
+    const [usersRes, matchesRes, teamsRes] = await Promise.all([
+      fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
+      fetch('/api/matches'),
+      fetch('/api/teams'),
+    ])
+    const [usersData, matchesData, teamsData] = await Promise.all([
+      usersRes.json(),
+      matchesRes.json(),
+      teamsRes.json(),
+    ])
+    setUsers(usersData)
+    setMatches((matchesData as Match[]).filter((m) => m.round >= 5))
+    setTeams(
+      Object.fromEntries(
+        (teamsData as { id: number; shortName: string }[]).map((t) => [t.id, t.shortName]),
+      ),
+    )
+    setDataLoaded(true)
+  }, [])
+
+  // Load data once elevated
+  useEffect(() => {
+    if (!elevated || dataLoaded) return
+    supabaseBrowser.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) loadData(session.access_token)
+    })
+  }, [elevated, dataLoaded, loadData])
+
+  async function getToken(): Promise<string | null> {
+    const {
+      data: { session },
+    } = await supabaseBrowser.auth.getSession()
+    return session?.access_token ?? null
+  }
+
+  async function adminFetch(url: string, options: RequestInit = {}) {
+    const token = await getToken()
     return fetch(url, {
       ...options,
       headers: { ...options.headers, Authorization: `Bearer ${token}` },
     })
   }
 
-  async function handleLogin() {
-    if (!password) return
-    setLoginError(null)
-    setLoginLoading(true)
+  async function handlePinSubmit() {
+    if (!pin) return
+    setPinError(null)
+    setPinLoading(true)
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
-        email: 'admin@matchcast.local',
-        password,
+      const token = await getToken()
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pin }),
       })
-      if (error || !data.session) {
-        setLoginError('Contraseña incorrecta.')
+      if (!res.ok) {
+        setPinError('PIN incorrecto.')
         return
       }
-
-      const accessToken = data.session.access_token
-      setToken(accessToken)
-
-      const [usersRes, matchesRes] = await Promise.all([
-        fetch('/api/admin/users', { headers: { Authorization: `Bearer ${accessToken}` } }),
-        fetch('/api/matches'),
-      ])
-      const [usersData, matchesData] = await Promise.all([usersRes.json(), matchesRes.json()])
-      setUsers(usersData)
-      setMatches((matchesData as Match[]).filter((m) => m.round >= 5))
-      setDataLoaded(true)
+      setElevated()
+      setElevatedState(true)
+      setPin('')
     } finally {
-      setLoginLoading(false)
+      setPinLoading(false)
     }
   }
 
-  async function handleLogout() {
-    await supabaseBrowser.auth.signOut()
-    setToken(null)
-    setPassword('')
-    setDataLoaded(false)
+  function handleExitAdmin() {
+    clearElevated()
+    router.push('/')
   }
 
   async function handleResetPassword() {
@@ -125,6 +193,50 @@ export default function AdminPage() {
       setConfirmDelete(false)
     } else {
       setDeleteResult(`✗ ${(data as { error: string }).error}`)
+    }
+  }
+
+  async function handleLoadPredictions() {
+    if (!editUserId) return
+    setEditResult(null)
+    setEditLoaded(false)
+    const roundMatches = matches.filter((m) => m.round === editRound)
+    const res = await adminFetch(`/api/admin/predictions?userId=${editUserId}&round=${editRound}`)
+    const data = (await res.json()) as { matchId: number; homeGoals: number; awayGoals: number }[]
+    const predMap = Object.fromEntries(data.map((p) => [p.matchId, p]))
+    setEditPreds(
+      roundMatches.map((m) => ({
+        matchId: m.id,
+        home: predMap[m.id] !== undefined ? String(predMap[m.id].homeGoals) : '',
+        away: predMap[m.id] !== undefined ? String(predMap[m.id].awayGoals) : '',
+      })),
+    )
+    setEditLoaded(true)
+  }
+
+  async function handleSaveAllPredictions() {
+    if (!editUserId) return
+    setEditSaving(true)
+    setEditResult(null)
+    try {
+      for (const p of editPreds) {
+        if (p.home === '' || p.away === '') continue
+        await adminFetch('/api/admin/predictions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: editUserId,
+            matchId: p.matchId,
+            homeGoals: Number(p.home),
+            awayGoals: Number(p.away),
+          }),
+        })
+      }
+      setEditResult('✓ Predicciones guardadas.')
+    } catch {
+      setEditResult('✗ Error al guardar.')
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -176,27 +288,47 @@ export default function AdminPage() {
   const rounds = [...new Set(matches.map((m) => m.round))].sort()
   const selectedMatch = matches.find((m) => m.id === resultMatchId)
 
-  if (!token) {
+  // Loading auth
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="font-headline text-primary-container text-4xl font-black">•••</div>
+      </div>
+    )
+  }
+
+  // Not the admin user
+  if (!isAdminUser) {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center space-y-3">
+        <span className="material-symbols-outlined text-on-surface-variant text-4xl">lock</span>
+        <p className="text-on-surface-variant text-sm">Acceso restringido.</p>
+      </div>
+    )
+  }
+
+  // PIN prompt
+  if (!elevated) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center space-y-6">
         <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>
         <div className="w-full max-w-xs space-y-3">
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-            placeholder="Contraseña"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handlePinSubmit()}
+            placeholder="PIN"
             autoComplete="current-password"
             className="font-body bg-surface-container-high text-on-surface placeholder:text-on-surface-variant focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
           />
-          {loginError && <p className="text-secondary text-sm font-medium">{loginError}</p>}
+          {pinError && <p className="text-secondary text-sm font-medium">{pinError}</p>}
           <button
-            onClick={handleLogin}
-            disabled={!password || loginLoading}
+            onClick={handlePinSubmit}
+            disabled={!pin || pinLoading}
             className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
           >
-            {loginLoading ? '…' : 'Entrar'}
+            {pinLoading ? '…' : 'Entrar'}
           </button>
         </div>
       </div>
@@ -223,10 +355,10 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">Admin</h1>
         <button
-          onClick={handleLogout}
+          onClick={handleExitAdmin}
           className="text-on-surface-variant hover:text-on-surface text-sm font-medium transition-colors"
         >
-          Salir
+          Volver a la app
         </button>
       </div>
 
@@ -346,47 +478,153 @@ export default function AdminPage() {
 
       {/* Predictions section */}
       {activeSection === 'predictions' && (
-        <div className="bg-surface-container-low space-y-3 rounded-xl p-4">
-          <h2 className="font-headline text-sm font-bold tracking-widest uppercase">
-            Borrar predicciones por jornada
-          </h2>
-          <select
-            value={predUserId}
-            onChange={(e) => setPredUserId(e.target.value)}
-            className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
-          >
-            <option value="">Selecciona usuario</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={predRound}
-            onChange={(e) => setPredRound(Number(e.target.value))}
-            className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
-          >
-            {rounds.map((r) => (
-              <option key={r} value={r}>
-                Jornada {r}
-              </option>
-            ))}
-          </select>
-          {predResult && (
-            <p
-              className={`text-sm font-medium ${predResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+        <div className="space-y-6">
+          {/* Edit predictions */}
+          <div className="bg-surface-container-low space-y-3 rounded-xl p-4">
+            <h2 className="font-headline text-sm font-bold tracking-widest uppercase">
+              Editar predicciones
+            </h2>
+            <select
+              value={editUserId}
+              onChange={(e) => {
+                setEditUserId(e.target.value)
+                setEditLoaded(false)
+                setEditResult(null)
+              }}
+              className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
             >
-              {predResult}
-            </p>
-          )}
-          <button
-            onClick={handleDeletePredictions}
-            disabled={!predUserId}
-            className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
-          >
-            Borrar predicciones
-          </button>
+              <option value="">Selecciona usuario</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={editRound}
+              onChange={(e) => {
+                setEditRound(Number(e.target.value))
+                setEditLoaded(false)
+                setEditResult(null)
+              }}
+              className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
+            >
+              {rounds.map((r) => (
+                <option key={r} value={r}>
+                  Jornada {r}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleLoadPredictions}
+              disabled={!editUserId}
+              className="font-headline bg-surface-container-high text-on-surface w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+            >
+              Cargar
+            </button>
+            {editLoaded && (
+              <div className="space-y-2">
+                {editPreds.map((p) => {
+                  const m = matches.find((m) => m.id === p.matchId)!
+                  return (
+                    <div key={p.matchId} className="flex items-center gap-2">
+                      <span className="text-on-surface-variant min-w-0 flex-1 truncate text-xs">
+                        {teams[m.homeTeamId] ?? `#${m.homeTeamId}`} vs{' '}
+                        {teams[m.awayTeamId] ?? `#${m.awayTeamId}`}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={p.home}
+                        onChange={(e) =>
+                          setEditPreds((prev) =>
+                            prev.map((x) =>
+                              x.matchId === p.matchId ? { ...x, home: e.target.value } : x,
+                            ),
+                          )
+                        }
+                        placeholder="–"
+                        className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-14 rounded-lg border-none p-2 text-center text-base focus:ring-2 focus:outline-none"
+                      />
+                      <span className="text-on-surface-variant text-xs">–</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={p.away}
+                        onChange={(e) =>
+                          setEditPreds((prev) =>
+                            prev.map((x) =>
+                              x.matchId === p.matchId ? { ...x, away: e.target.value } : x,
+                            ),
+                          )
+                        }
+                        placeholder="–"
+                        className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-14 rounded-lg border-none p-2 text-center text-base focus:ring-2 focus:outline-none"
+                      />
+                    </div>
+                  )
+                })}
+                {editResult && (
+                  <p
+                    className={`text-sm font-medium ${editResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+                  >
+                    {editResult}
+                  </p>
+                )}
+                <button
+                  onClick={handleSaveAllPredictions}
+                  disabled={editSaving}
+                  className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+                >
+                  {editSaving ? '…' : 'Guardar'}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Delete predictions */}
+          <div className="bg-surface-container-low space-y-3 rounded-xl p-4">
+            <h2 className="font-headline text-sm font-bold tracking-widest uppercase">
+              Borrar predicciones por jornada
+            </h2>
+            <select
+              value={predUserId}
+              onChange={(e) => setPredUserId(e.target.value)}
+              className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
+            >
+              <option value="">Selecciona usuario</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={predRound}
+              onChange={(e) => setPredRound(Number(e.target.value))}
+              className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
+            >
+              {rounds.map((r) => (
+                <option key={r} value={r}>
+                  Jornada {r}
+                </option>
+              ))}
+            </select>
+            {predResult && (
+              <p
+                className={`text-sm font-medium ${predResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+              >
+                {predResult}
+              </p>
+            )}
+            <button
+              onClick={handleDeletePredictions}
+              disabled={!predUserId}
+              className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+            >
+              Borrar predicciones
+            </button>
+          </div>
         </div>
       )}
 
@@ -408,7 +646,8 @@ export default function AdminPage() {
                   .filter((m) => m.round === r)
                   .map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.homeTeamId} vs {m.awayTeamId}
+                      {teams[m.homeTeamId] ?? `#${m.homeTeamId}`} vs{' '}
+                      {teams[m.awayTeamId] ?? `#${m.awayTeamId}`}
                       {m.isFinished ? ` (${m.homeGoals}-${m.awayGoals})` : ''}
                     </option>
                   ))}
@@ -418,7 +657,8 @@ export default function AdminPage() {
 
           {selectedMatch && (
             <p className="text-on-surface-variant text-xs">
-              Local: #{selectedMatch.homeTeamId} — Visitante: #{selectedMatch.awayTeamId}
+              Local: {teams[selectedMatch.homeTeamId] ?? `#${selectedMatch.homeTeamId}`} —
+              Visitante: {teams[selectedMatch.awayTeamId] ?? `#${selectedMatch.awayTeamId}`}
             </p>
           )}
 

@@ -526,7 +526,7 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
           </p>
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              {participants.slice(0, 5).map((p) => (
+              {participants.slice(0, 3).map((p) => (
                 <div
                   key={p.userId}
                   className="bg-surface-container-highest font-headline border-surface flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-black"
@@ -539,18 +539,19 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
                     .toUpperCase()}
                 </div>
               ))}
-              {participants.length > 5 && (
+              {participants.length > 3 && (
                 <div className="bg-surface-container-high border-surface text-on-surface-variant flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-bold">
-                  +{participants.length - 5}
+                  +{participants.length - 3}
                 </div>
               )}
             </div>
             <span className="text-on-surface-variant text-sm">
               {participants.length === 1
                 ? `${participants[0].userName} ya ha predicho`
-                : participants.length === 2
-                  ? `${participants[0].userName} y ${participants[1].userName}`
-                  : `${participants[0].userName} y ${participants.length - 1} más`}
+                : `${participants
+                    .slice(0, -1)
+                    .map((p) => p.userName)
+                    .join(', ')} y ${participants[participants.length - 1].userName}`}
             </span>
           </div>
         </div>
