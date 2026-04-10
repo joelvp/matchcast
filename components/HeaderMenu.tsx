@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
 
-export default function HeaderMenu() {
+export default function HeaderMenu({ version }: { version: string }) {
   const { userName, signOut } = useAuth()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -41,11 +41,14 @@ export default function HeaderMenu() {
           )}
           <button
             onClick={handleSignOut}
-            className="text-on-surface hover:bg-surface-container flex w-full items-center gap-2 rounded-b-xl px-4 py-3 text-sm"
+            className="text-on-surface hover:bg-surface-container flex w-full items-center gap-2 px-4 py-3 text-sm"
           >
             <span className="material-symbols-outlined text-[18px]">logout</span>
             Cerrar sesión
           </button>
+          <div className="border-outline-variant/20 border-t px-4 py-2 text-right">
+            <span className="text-on-surface-variant text-[10px]">v{version}</span>
+          </div>
         </div>
       )}
     </div>

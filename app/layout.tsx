@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import BottomNav from '@/components/BottomNav'
 import { AuthProvider } from '@/components/AuthProvider'
 import HeaderMenu from '@/components/HeaderMenu'
+import { version } from '@/package.json'
 import './globals.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -25,7 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: ReactNode
 }>) {
   return (
     <html lang="es" className={`${spaceGrotesk.variable} ${inter.variable} h-full antialiased`}>
@@ -41,7 +43,7 @@ export default function RootLayout({
             <span className="font-headline text-primary-container text-2xl font-black tracking-tighter">
               QUINIELA DHB
             </span>
-            <HeaderMenu />
+            <HeaderMenu version={version} />
           </header>
           <main className="mx-auto w-full max-w-md flex-1 px-4 pt-2 pb-24">{children}</main>
           <BottomNav />
