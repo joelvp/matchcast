@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCurrentRound } from '@/domain/rounds'
+import { getCurrentRound, getRoundDeadline } from '@/domain/rounds'
 import type { Match, Prediction } from '@/domain/types'
 
 type TeamInfo = { shortName: string; shieldUrl?: string }
@@ -18,16 +18,6 @@ type Props = {
 type ScoreInput = { home: string; away: string }
 
 type Participant = { userId: string; userName: string; count: number; total: number }
-
-/** Noon (12:00) on the first match day of the round, in Spain time */
-function getRoundDeadline(roundMatches: Match[]): Date {
-  const earliest = roundMatches.reduce(
-    (min, m) => (m.matchDate < min ? m.matchDate : min),
-    roundMatches[0].matchDate,
-  )
-  const dateStr = new Date(earliest).toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })
-  return new Date(`${dateStr}T12:00:00+02:00`)
-}
 
 function formatDeadline(date: Date): string {
   return date.toLocaleDateString('es-ES', {
