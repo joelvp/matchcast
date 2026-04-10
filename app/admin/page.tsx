@@ -75,6 +75,11 @@ export default function AdminPage() {
   const [resultFinished, setResultFinished] = useState(true)
   const [resultResult, setResultResult] = useState<string | null>(null)
 
+  // Edit match date
+  const [dateMatchId, setDateMatchId] = useState<number | ''>('')
+  const [dateValue, setDateValue] = useState('')
+  const [dateResult, setDateResult] = useState<string | null>(null)
+
   // Sync
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [syncLoading, setSyncLoading] = useState(false)
@@ -271,6 +276,44 @@ export default function AdminPage() {
     })
     const data = await res.json()
     setResultResult(res.ok ? '✓ Resultado guardado.' : `✗ ${(data as { error: string }).error}`)
+  }
+
+  async function handleClearResult() {
+    if (resultMatchId === '') return
+    setResultResult(null)
+    const res = await adminFetch('/api/admin/results', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId: resultMatchId }),
+    })
+    const data = await res.json()
+    setResultResult(res.ok ? '✓ Resultado limpiado.' : `✗ ${(data as { error: string }).error}`)
+    if (res.ok) {
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === resultMatchId
+            ? { ...m, homeGoals: null, awayGoals: null, isFinished: false }
+            : m,
+        ),
+      )
+    }
+  }
+
+  async function handleEditMatchDate() {
+    if (dateMatchId === '' || !dateValue) return
+    setDateResult(null)
+    const res = await adminFetch('/api/admin/matches', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId: dateMatchId, matchDate: dateValue }),
+    })
+    const data = await res.json()
+    setDateResult(res.ok ? '✓ Fecha actualizada.' : `✗ ${(data as { error: string }).error}`)
+    if (res.ok) {
+      setMatches((prev) =>
+        prev.map((m) => (m.id === dateMatchId ? { ...m, matchDate: dateValue } : m)),
+      )
+    }
   }
 
   async function handleSync() {
@@ -698,12 +741,74 @@ export default function AdminPage() {
               {resultResult}
             </p>
           )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleFakeResult}
+              disabled={resultMatchId === '' || resultHome === '' || resultAway === ''}
+              className="font-headline bg-primary-container text-on-primary-fixed flex-1 rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+            >
+              Guardar
+            </button>
+            <button
+              onClick={handleClearResult}
+              disabled={resultMatchId === ''}
+              className="font-headline bg-error/10 text-error rounded-xl px-5 py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit match date section */}
+      {activeSection === 'results' && (
+        <div className="bg-surface-container-low space-y-3 rounded-xl p-4">
+          <h2 className="font-headline text-sm font-bold tracking-widest uppercase">
+            Editar fecha de partido
+          </h2>
+          <select
+            value={dateMatchId}
+            onChange={(e) => {
+              setDateMatchId(Number(e.target.value))
+              setDateResult(null)
+              const m = matches.find((m) => m.id === Number(e.target.value))
+              setDateValue(m ? m.matchDate.slice(0, 16) : '')
+            }}
+            className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
+          >
+            <option value="">Selecciona partido</option>
+            {rounds.map((r) => (
+              <optgroup key={r} label={`Jornada ${r}`}>
+                {matches
+                  .filter((m) => m.round === r)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {teams[m.homeTeamId] ?? `#${m.homeTeamId}`} vs{' '}
+                      {teams[m.awayTeamId] ?? `#${m.awayTeamId}`}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+          <input
+            type="datetime-local"
+            value={dateValue}
+            onChange={(e) => setDateValue(e.target.value)}
+            className="font-body bg-surface-container-high text-on-surface focus:ring-primary-container w-full rounded-xl border-none px-4 py-3 text-base focus:ring-2 focus:outline-none"
+          />
+          {dateResult && (
+            <p
+              className={`text-sm font-medium ${dateResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+            >
+              {dateResult}
+            </p>
+          )}
           <button
-            onClick={handleFakeResult}
-            disabled={resultMatchId === '' || resultHome === '' || resultAway === ''}
+            onClick={handleEditMatchDate}
+            disabled={dateMatchId === '' || !dateValue}
             className="font-headline bg-primary-container text-on-primary-fixed w-full rounded-xl py-3 font-extrabold tracking-widest uppercase disabled:opacity-40"
           >
-            Guardar resultado
+            Actualizar fecha
           </button>
         </div>
       )}

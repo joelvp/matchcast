@@ -40,3 +40,33 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function DELETE(request: NextRequest) {
+  if (!(await verifyAdminSession(request.headers.get('Authorization')))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { matchId } = body as Record<string, unknown>
+  if (typeof matchId !== 'number') {
+    return NextResponse.json({ error: 'matchId is required' }, { status: 400 })
+  }
+
+  const { error } = await supabaseServer
+    .from('matches')
+    .update({ home_goals: null, away_goals: null, is_finished: false })
+    .eq('id', matchId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  revalidatePath('/')
+  revalidatePath('/results')
+
+  return NextResponse.json({ ok: true })
+}
