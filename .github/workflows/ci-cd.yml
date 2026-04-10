@@ -39,6 +39,13 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_GIT_PROVIDER: github
+      VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
+      VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
+      VERCEL_GIT_COMMIT_REF: ${{ github.ref_name }}
+      VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+      VERCEL_GIT_COMMIT_AUTHOR_LOGIN: ${{ github.actor }}
+      VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title || 'Deploy via GitHub Actions' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,11 +65,3 @@ jobs:
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_GIT_PROVIDER: github
-          VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
-          VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
-          VERCEL_GIT_COMMIT_REF: ${{ github.ref_name }}
-          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
-          VERCEL_GIT_COMMIT_AUTHOR_LOGIN: ${{ github.actor }}
-          VERCEL_GIT_COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.pull_request.title }}
