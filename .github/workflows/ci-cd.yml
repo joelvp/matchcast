@@ -35,13 +35,11 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_GIT_PROVIDER: github
-      VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
-      VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
-      VERCEL_GIT_COMMIT_REF: ${{ github.head_ref || github.ref_name }}
-      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Assign branch name for Vercel
+        run: git checkout -B "${{ github.head_ref || github.ref_name }}"
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
