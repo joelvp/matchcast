@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateProjectedStandings } from './standings'
+import { calculateInitialStandings, calculateProjectedStandings } from './standings'
 import type { Match, Prediction, TeamStanding } from './types'
 
 const makeTeam = (teamId: number, overrides: Partial<TeamStanding> = {}): TeamStanding => ({
@@ -16,7 +16,12 @@ const makeTeam = (teamId: number, overrides: Partial<TeamStanding> = {}): TeamSt
   ...overrides,
 })
 
-const makeMatch = (id: number, homeTeamId: number, awayTeamId: number): Match => ({
+const makeMatch = (
+  id: number,
+  homeTeamId: number,
+  awayTeamId: number,
+  overrides: Partial<Match> = {},
+): Match => ({
   id,
   round: 5,
   matchDate: '2026-04-11',
@@ -25,7 +30,16 @@ const makeMatch = (id: number, homeTeamId: number, awayTeamId: number): Match =>
   homeGoals: null,
   awayGoals: null,
   isFinished: false,
+  ...overrides,
 })
+
+const makeFinishedMatch = (
+  id: number,
+  homeTeamId: number,
+  awayTeamId: number,
+  homeGoals: number,
+  awayGoals: number,
+): Match => makeMatch(id, homeTeamId, awayTeamId, { homeGoals, awayGoals, isFinished: true })
 
 const makePrediction = (matchId: number, homeGoals: number, awayGoals: number): Prediction => ({
   userId: 'user-1',
@@ -118,5 +132,83 @@ describe('calculateProjectedStandings', () => {
 
     const result = calculateProjectedStandings(standings, predictions, matches)
     expect(result.every((s) => s.points === 0)).toBe(true)
+  })
+
+  it('uses real result when match is finished and no prediction exists', () => {
+    const standings = [makeTeam(1), makeTeam(2)]
+    const matches = [makeFinishedMatch(1, 1, 2, 2, 0)]
+
+    const result = calculateProjectedStandings(standings, [], matches)
+    const home = result.find((s) => s.teamId === 1)!
+    const away = result.find((s) => s.teamId === 2)!
+
+    expect(home.points).toBe(3)
+    expect(away.points).toBe(0)
+  })
+
+  it('uses prediction over real result when match is finished and prediction exists', () => {
+    const standings = [makeTeam(1), makeTeam(2)]
+    // Real result: home wins 2-0
+    const matches = [makeFinishedMatch(1, 1, 2, 2, 0)]
+    // User predicted: away wins 0-1
+    const predictions = [makePrediction(1, 0, 1)]
+
+    const result = calculateProjectedStandings(standings, predictions, matches)
+    const home = result.find((s) => s.teamId === 1)!
+    const away = result.find((s) => s.teamId === 2)!
+
+    expect(away.points).toBe(3)
+    expect(home.points).toBe(0)
+  })
+
+  it('skips pending matches without a prediction', () => {
+    const standings = [makeTeam(1), makeTeam(2)]
+    const matches = [makeMatch(1, 1, 2)] // pending, no prediction
+
+    const result = calculateProjectedStandings(standings, [], matches)
+    expect(result.every((s) => s.points === 0)).toBe(true)
+  })
+})
+
+describe('calculateInitialStandings', () => {
+  it('undoes a home win result', () => {
+    const standings = [
+      makeTeam(1, { points: 3, played: 1, won: 1, goalsFor: 2, goalsAgainst: 0 }),
+      makeTeam(2, { points: 0, played: 1, lost: 1, goalsFor: 0, goalsAgainst: 2 }),
+    ]
+    const finishedMatches = [makeFinishedMatch(1, 1, 2, 2, 0)]
+
+    const result = calculateInitialStandings(standings, finishedMatches)
+    const team1 = result.find((s) => s.teamId === 1)!
+    const team2 = result.find((s) => s.teamId === 2)!
+
+    expect(team1.points).toBe(0)
+    expect(team1.played).toBe(0)
+    expect(team1.won).toBe(0)
+    expect(team2.points).toBe(0)
+    expect(team2.played).toBe(0)
+    expect(team2.lost).toBe(0)
+  })
+
+  it('undoes a draw result', () => {
+    const standings = [
+      makeTeam(1, { points: 1, played: 1, drawn: 1, goalsFor: 1, goalsAgainst: 1 }),
+      makeTeam(2, { points: 1, played: 1, drawn: 1, goalsFor: 1, goalsAgainst: 1 }),
+    ]
+    const finishedMatches = [makeFinishedMatch(1, 1, 2, 1, 1)]
+
+    const result = calculateInitialStandings(standings, finishedMatches)
+    expect(result.every((s) => s.points === 0 && s.played === 0)).toBe(true)
+  })
+
+  it('is the inverse of calculateProjectedStandings for real results', () => {
+    const initial = [makeTeam(1, { points: 5 }), makeTeam(2, { points: 3 })]
+    const match = makeFinishedMatch(1, 1, 2, 2, 1)
+
+    const withResult = calculateProjectedStandings(initial, [], [match])
+    const restored = calculateInitialStandings(withResult, [match])
+
+    expect(restored.find((s) => s.teamId === 1)!.points).toBe(5)
+    expect(restored.find((s) => s.teamId === 2)!.points).toBe(3)
   })
 })
