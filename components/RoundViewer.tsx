@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MatchCard } from './MatchCard'
 import { getCurrentRound } from '@/domain/rounds'
 import type { Match } from '@/domain/types'
@@ -15,9 +15,17 @@ type Props = {
 export function RoundViewer({ matches, teams }: Props) {
   const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b)
 
-  const [activeRound, setActiveRound] = useState<number>(() =>
-    rounds.length > 0 ? getCurrentRound(rounds, matches) : rounds[0],
-  )
+  const currentRound = rounds.length > 0 ? getCurrentRound(rounds, matches) : rounds[0]
+  const [activeRound, setActiveRound] = useState<number>(currentRound)
+  const activeButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    activeButtonRef.current?.scrollIntoView({
+      inline: 'start',
+      block: 'nearest',
+      behavior: 'instant',
+    })
+  }, [])
 
   const roundMatches = matches.filter((m) => m.round === activeRound)
 
@@ -27,12 +35,13 @@ export function RoundViewer({ matches, teams }: Props) {
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
         {rounds.map((round) => {
           const isActive = round === activeRound
-          const isCurrent = round === getCurrentRound(rounds, matches)
+          const isCurrent = round === currentRound
           const isFinished = matches.filter((m) => m.round === round).every((m) => m.isFinished)
 
           return (
             <button
               key={round}
+              ref={isActive ? activeButtonRef : undefined}
               onClick={() => setActiveRound(round)}
               className={`rounded-full px-6 py-2 text-xs font-bold tracking-widest whitespace-nowrap uppercase transition-all active:scale-[0.97] ${
                 isActive
