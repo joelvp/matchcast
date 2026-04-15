@@ -26,6 +26,7 @@ export type Match = {
   homeGoals: number | null
   awayGoals: number | null
   isFinished: boolean
+  isLive: boolean
 }
 
 export type Prediction = {

@@ -412,7 +412,7 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
                     value={score.home}
                     onChange={(e) => handleChange(match.id, 'home', e.target.value)}
                     disabled={isSaving}
-                    placeholder="0"
+                    placeholder="-"
                     className="font-headline bg-surface-container-high text-primary focus:ring-primary-container h-16 w-14 rounded-xl border-none p-0 text-center text-3xl font-black focus:ring-2 focus:outline-none disabled:opacity-50"
                   />
                   <span className="text-outline-variant font-black">VS</span>
@@ -422,7 +422,7 @@ export function PredictionForm({ matches, predictions, onSave, onDelete, userId,
                     value={score.away}
                     onChange={(e) => handleChange(match.id, 'away', e.target.value)}
                     disabled={isSaving}
-                    placeholder="0"
+                    placeholder="-"
                     className="font-headline bg-surface-container-high text-primary focus:ring-primary-container h-16 w-14 rounded-xl border-none p-0 text-center text-3xl font-black focus:ring-2 focus:outline-none disabled:opacity-50"
                   />
                 </div>

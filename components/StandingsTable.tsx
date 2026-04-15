@@ -3,7 +3,14 @@
 import { useState } from 'react'
 import type { TeamStanding } from '@/domain/types'
 
-type BadgeType = 'live' | 'projection' | 'final' | 'pending' | 'real-pending' | 'real-final'
+type BadgeType =
+  | 'live'
+  | 'projection'
+  | 'final'
+  | 'pending'
+  | 'real-pending'
+  | 'real-final'
+  | 'prediction-final'
 
 type Props = {
   standings: TeamStanding[]
@@ -12,6 +19,7 @@ type Props = {
   subtitle?: string
   badge?: BadgeType
   showBadgeInfo?: boolean
+  infoContext?: 'predictions' | 'real'
 }
 
 const BADGE_CONFIG: Record<
@@ -49,26 +57,43 @@ const BADGE_CONFIG: Record<
     label: 'FINALIZADA',
     className: 'bg-primary/10 text-primary',
   },
+  'prediction-final': {
+    icon: 'history',
+    label: 'TU APUESTA',
+    className: 'bg-tertiary/10 text-tertiary',
+  },
 }
 
-const MODAL_ITEMS: { badge: BadgeType; text: string }[] = [
-  {
-    badge: 'pending',
-    text: 'Aún no has introducido predicciones para esta jornada.',
-  },
-  {
-    badge: 'projection',
-    text: 'Ningún partido ha terminado aún. La tabla refleja cómo quedaría todo si tus predicciones se cumplen.',
-  },
-  {
-    badge: 'live',
-    text: 'Algunos partidos ya tienen resultado real. La tabla mezcla esos resultados con tus predicciones para los partidos que quedan.',
-  },
-  {
-    badge: 'final',
-    text: 'Todos los partidos han terminado. Esta es la clasificación final real de la jornada.',
-  },
-]
+const MODAL_ITEMS: Record<'predictions' | 'real', { badge: BadgeType; text: string }[]> = {
+  predictions: [
+    {
+      badge: 'pending',
+      text: 'Aún no has introducido predicciones para esta jornada. Ve a Predecir para añadirlas.',
+    },
+    {
+      badge: 'projection',
+      text: 'La tabla muestra cómo quedaría la clasificación si todas tus predicciones se cumplen. Los partidos sin predicción no se tienen en cuenta.',
+    },
+    {
+      badge: 'prediction-final',
+      text: 'La jornada ya ha terminado. Así habría quedado la clasificación si tus predicciones se hubieran cumplido.',
+    },
+  ],
+  real: [
+    {
+      badge: 'real-pending',
+      text: 'La jornada aún no ha comenzado. Se muestra la clasificación real acumulada hasta ahora.',
+    },
+    {
+      badge: 'live',
+      text: 'Hay partidos en curso. La clasificación incluye los resultados parciales en tiempo real.',
+    },
+    {
+      badge: 'real-final',
+      text: 'Todos los partidos han terminado. Esta es la clasificación real definitiva de la jornada.',
+    },
+  ],
+}
 
 function Badge({ type, onClick }: { type: BadgeType; onClick?: () => void }) {
   const config = BADGE_CONFIG[type]
@@ -114,6 +139,7 @@ export function StandingsTable({
   subtitle,
   badge,
   showBadgeInfo,
+  infoContext = 'predictions',
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -149,13 +175,13 @@ export function StandingsTable({
               <tr className="bg-surface-container/30 text-on-surface-variant text-[10px] font-bold tracking-widest uppercase">
                 <th className="px-4 py-3">Pos</th>
                 <th className="px-4 py-3">Eq</th>
+                {projected && <th className="px-4 py-3" />}
                 <th className="px-4 py-3 text-center">Pts</th>
                 <th className="px-4 py-3 text-center">PJ</th>
                 <th className="px-4 py-3 text-center">G</th>
                 <th className="px-4 py-3 text-center">E</th>
                 <th className="px-4 py-3 text-center">P</th>
                 <th className="px-4 py-3 text-center">DG</th>
-                {projected && <th className="px-4 py-3 text-center">±</th>}
               </tr>
             </thead>
             <tbody className="text-sm font-medium">
@@ -194,6 +220,17 @@ export function StandingsTable({
                         {team.shortName}
                       </div>
                     </td>
+                    {projected && (
+                      <td className="px-4 py-4 text-center text-xs">
+                        {diff === null || diff === 0 ? (
+                          <span className="text-on-surface-variant">—</span>
+                        ) : diff > 0 ? (
+                          <span className="text-primary font-bold">↑{diff}</span>
+                        ) : (
+                          <span className="text-secondary font-bold">↓{Math.abs(diff)}</span>
+                        )}
+                      </td>
+                    )}
                     <td
                       className={`px-4 py-4 text-center font-bold tabular-nums ${isTop ? 'text-primary-fixed' : isBottom ? 'text-secondary' : isOurs ? 'text-tertiary' : 'text-on-surface'}`}
                     >
@@ -210,17 +247,6 @@ export function StandingsTable({
                     >
                       {gd > 0 ? `+${gd}` : gd}
                     </td>
-                    {projected && (
-                      <td className="px-4 py-4 text-center text-xs">
-                        {diff === null || diff === 0 ? (
-                          <span className="text-on-surface-variant">—</span>
-                        ) : diff > 0 ? (
-                          <span className="text-primary font-bold">↑{diff}</span>
-                        ) : (
-                          <span className="text-secondary font-bold">↓{Math.abs(diff)}</span>
-                        )}
-                      </td>
-                    )}
                   </tr>
                 )
               })}
@@ -252,7 +278,7 @@ export function StandingsTable({
             </div>
 
             <div className="space-y-4">
-              {MODAL_ITEMS.map(({ badge: itemBadge, text }) => {
+              {MODAL_ITEMS[infoContext].map(({ badge: itemBadge, text }) => {
                 const config = BADGE_CONFIG[itemBadge]
                 return (
                   <div key={itemBadge} className="flex gap-3">

@@ -110,13 +110,20 @@ export function calculateInitialStandings(
 
 /**
  * Calculates projected standings starting from a base (pre-phase) state.
- * For each match: uses the user's prediction if available, otherwise the real result
- * if the match is finished. Pending matches without a prediction are skipped.
+ *
+ * Two modes:
+ * - Default (no realRounds): prediction takes priority; real result used as fallback for
+ *   finished/live matches. Used for "Resultados reales" tab (called with empty predictions).
+ * - Smart predictions (realRounds provided): rounds in the set use real results; all other
+ *   rounds use the user's predictions only (skip if no prediction). Used for "Tus predicciones"
+ *   tab — pass fully-finished rounds excluding the selected round so the selected round always
+ *   shows the user's predictions, even after it ends.
  */
 export function calculateProjectedStandings(
   baseStandings: TeamStanding[],
   predictions: Prediction[],
   matches: Match[],
+  realRounds?: Set<number>,
 ): TeamStanding[] {
   const predictionByMatchId = new Map(predictions.map((p) => [p.matchId, p]))
   const standings = new Map(baseStandings.map((s) => [s.teamId, { ...s }]))
@@ -124,18 +131,44 @@ export function calculateProjectedStandings(
   for (const match of matches) {
     const prediction = predictionByMatchId.get(match.id)
 
-    if (prediction) {
-      applyResult(
-        standings,
-        match.homeTeamId,
-        match.awayTeamId,
-        prediction.homeGoals,
-        prediction.awayGoals,
-      )
-    } else if (match.isFinished && match.homeGoals !== null && match.awayGoals !== null) {
-      applyResult(standings, match.homeTeamId, match.awayTeamId, match.homeGoals, match.awayGoals)
+    if (realRounds !== undefined) {
+      if (realRounds.has(match.round)) {
+        if (match.homeGoals !== null && match.awayGoals !== null) {
+          applyResult(
+            standings,
+            match.homeTeamId,
+            match.awayTeamId,
+            match.homeGoals,
+            match.awayGoals,
+          )
+        }
+      } else if (prediction) {
+        applyResult(
+          standings,
+          match.homeTeamId,
+          match.awayTeamId,
+          prediction.homeGoals,
+          prediction.awayGoals,
+        )
+      }
+      // no prediction → skip
+    } else {
+      if (prediction) {
+        applyResult(
+          standings,
+          match.homeTeamId,
+          match.awayTeamId,
+          prediction.homeGoals,
+          prediction.awayGoals,
+        )
+      } else if (
+        (match.isFinished || match.isLive) &&
+        match.homeGoals !== null &&
+        match.awayGoals !== null
+      ) {
+        applyResult(standings, match.homeTeamId, match.awayTeamId, match.homeGoals, match.awayGoals)
+      }
     }
-    // pending + no prediction → skip
   }
 
   return sortStandings(Array.from(standings.values()))

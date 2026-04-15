@@ -30,6 +30,7 @@ const makeMatch = (
   homeGoals: null,
   awayGoals: null,
   isFinished: false,
+  isLive: false,
   ...overrides,
 })
 
