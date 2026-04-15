@@ -7,8 +7,6 @@ const TOTAL_ROUNDS = 8
 const matchUrl = (round: number) =>
   `https://resultadoshockey.isquad.es/competicion.php?seleccion=0&id=${COMP_ID}&jornada=${round}&id_ambito=0&id_superficie=1`
 
-const STANDINGS_URL = `https://resultadoshockey.isquad.es/clasificacion.php?seleccion=0&id=${COMP_ID}&id_ambito=0&id_territorial=9999&id_superficie=1&iframe=0`
-
 function normalize(name: string): string {
   return name
     .toUpperCase()
@@ -17,11 +15,6 @@ function normalize(name: string): string {
     .replace(/[^A-Z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-function firstInt(text: string): number {
-  const m = text.match(/\d+/)
-  return m ? parseInt(m[0], 10) : 0
 }
 
 function parseDateTime(dateText: string, timeText: string): string {
@@ -40,6 +33,7 @@ type ScrapedMatch = {
   homeGoals: number | null
   awayGoals: number | null
   isFinished: boolean
+  isLive: boolean
   matchDate: string
 }
 
@@ -63,66 +57,33 @@ async function scrapeRound(round: number): Promise<ScrapedMatch[]> {
     let homeGoals: number | null = null
     let awayGoals: number | null = null
 
-    if (isFinished) {
-      const local = row.querySelector('span.local')
-      const visitante = row.querySelector('span.visitante')
-      if (local && visitante) {
-        const h = parseInt(local.text.trim(), 10)
-        const a = parseInt(visitante.text.trim(), 10)
-        if (!isNaN(h) && !isNaN(a)) {
-          homeGoals = h
-          awayGoals = a
-        }
+    const local = row.querySelector('span.local')
+    const visitante = row.querySelector('span.visitante')
+    if (local && visitante) {
+      const h = parseInt(local.text.trim(), 10)
+      const a = parseInt(visitante.text.trim(), 10)
+      if (!isNaN(h) && !isNaN(a)) {
+        homeGoals = h
+        awayGoals = a
       }
     }
+
+    const isLive = !isFinished && homeGoals !== null
 
     const dateTimeCell = row.querySelectorAll('td')[2]
     const timeText = dateTimeCell?.querySelector('div:not(.negrita)')?.text.trim() ?? ''
     const dateText = dateTimeCell?.querySelector('div.negrita')?.text.trim() ?? ''
     const matchDate = parseDateTime(dateText, timeText)
 
-    results.push({ round, homeTeamNorm, awayTeamNorm, homeGoals, awayGoals, isFinished, matchDate })
-  }
-
-  return results
-}
-
-type ScrapedStanding = {
-  teamNorm: string
-  points: number
-  played: number
-  won: number
-  drawn: number
-  lost: number
-  goalsFor: number
-  goalsAgainst: number
-}
-
-async function scrapeStandings(): Promise<ScrapedStanding[]> {
-  const html = await fetch(STANDINGS_URL).then((r) => r.text())
-  const root = parseHtml(html)
-  const rows = root.querySelectorAll('table.clasificacion tbody tr')
-  const results: ScrapedStanding[] = []
-
-  for (const row of rows) {
-    const cells = row.querySelectorAll('td')
-    if (cells.length < 10) continue
-
-    const teamLink = cells[1]?.querySelector('a')
-    if (!teamLink) continue
-
-    const teamNorm = normalize(teamLink.text)
-    if (!teamNorm) continue
-
     results.push({
-      teamNorm,
-      points: firstInt(cells[3].text),
-      played: firstInt(cells[4].text),
-      won: firstInt(cells[5].text),
-      drawn: firstInt(cells[6].text),
-      lost: firstInt(cells[7].text),
-      goalsFor: firstInt(cells[8].text),
-      goalsAgainst: firstInt(cells[9].text),
+      round,
+      homeTeamNorm,
+      awayTeamNorm,
+      homeGoals,
+      awayGoals,
+      isFinished,
+      isLive,
+      matchDate,
     })
   }
 
@@ -160,34 +121,14 @@ Deno.serve(async () => {
           home_goals: m.homeGoals,
           away_goals: m.awayGoals,
           is_finished: m.isFinished,
+          is_live: m.isLive,
         },
         { onConflict: 'round,home_team_id,away_team_id' },
       )
     }
   }
 
-  // Sync standings
-  const standings = await scrapeStandings()
-
-  for (const s of standings) {
-    const teamId = teamMap.get(s.teamNorm)
-    if (!teamId) continue
-
-    await supabase.from('standings').upsert(
-      {
-        team_id: teamId,
-        points: s.points,
-        played: s.played,
-        won: s.won,
-        drawn: s.drawn,
-        lost: s.lost,
-        goals_for: s.goalsFor,
-        goals_against: s.goalsAgainst,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'team_id' },
-    )
-  }
+  await supabase.rpc('refresh_standings')
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json' },

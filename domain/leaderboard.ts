@@ -61,5 +61,15 @@ export function calculateLeaderboard(
     }
   }
 
-  return Array.from(entriesById.values()).sort((a, b) => b.totalPoints - a.totalPoints)
+  return Array.from(entriesById.values())
+    .map((entry) => ({
+      ...entry,
+      breakdown: [...entry.breakdown].sort((a, b) => {
+        const matchA = finishedMatches.get(a.matchId)
+        const matchB = finishedMatches.get(b.matchId)
+        const roundDiff = (matchA?.round ?? 0) - (matchB?.round ?? 0)
+        return roundDiff !== 0 ? roundDiff : a.matchId - b.matchId
+      }),
+    }))
+    .sort((a, b) => b.totalPoints - a.totalPoints)
 }

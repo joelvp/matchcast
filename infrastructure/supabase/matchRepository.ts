@@ -5,7 +5,7 @@ export async function getMatches(): Promise<Match[]> {
   const { data, error } = await supabaseServer
     .from('matches')
     .select(
-      'id, round, match_date, home_team_id, away_team_id, home_goals, away_goals, is_finished',
+      'id, round, match_date, home_team_id, away_team_id, home_goals, away_goals, is_finished, is_live',
     )
     .order('round')
     .order('id')
@@ -21,5 +21,6 @@ export async function getMatches(): Promise<Match[]> {
     homeGoals: row.home_goals,
     awayGoals: row.away_goals,
     isFinished: row.is_finished,
+    isLive: row.is_live,
   }))
 }

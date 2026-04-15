@@ -26,6 +26,7 @@ function formatKickoff(matchDate: string): string {
 
 export function MatchCard({ match, prediction, teams }: Props) {
   const isFinished = match.isFinished
+  const isLive = match.isLive
   const hasPrediction = prediction !== undefined
   const homeTeam = teams?.[match.homeTeamId]
   const awayTeam = teams?.[match.awayTeamId]
@@ -37,7 +38,7 @@ export function MatchCard({ match, prediction, teams }: Props) {
   return (
     <div className="bg-surface-container relative overflow-hidden rounded-xl">
       <div
-        className={`absolute top-0 left-0 h-full w-1 ${isFinished ? 'bg-primary-container' : 'bg-outline-variant/40'}`}
+        className={`absolute top-0 left-0 h-full w-1 ${isFinished ? 'bg-primary-container' : isLive ? 'bg-error' : 'bg-outline-variant/40'}`}
       />
 
       <div className="p-5 pl-6">
@@ -74,6 +75,18 @@ export function MatchCard({ match, prediction, teams }: Props) {
                 </div>
                 <span className="bg-primary/10 text-primary-fixed rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest uppercase">
                   Finalizado
+                </span>
+              </>
+            ) : isLive ? (
+              <>
+                <div className="font-headline text-error flex items-center gap-2 text-3xl font-black tracking-tighter">
+                  <span>{match.homeGoals}</span>
+                  <span className="text-outline-variant text-xl">-</span>
+                  <span>{match.awayGoals}</span>
+                </div>
+                <span className="bg-error/10 text-error flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-black tracking-widest uppercase">
+                  <span className="bg-error h-1.5 w-1.5 animate-pulse rounded-full" />
+                  Live
                 </span>
               </>
             ) : hasPrediction ? (

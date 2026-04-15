@@ -41,6 +41,7 @@ const makeMatch = (id: number, homeGoals: number, awayGoals: number): Match => (
   homeGoals,
   awayGoals,
   isFinished: true,
+  isLive: false,
 })
 
 const makePrediction = (

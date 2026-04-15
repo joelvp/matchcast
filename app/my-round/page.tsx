@@ -125,7 +125,7 @@ export default function MyRoundPage() {
           >
             <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="bg-surface-container-highest font-headline flex h-10 w-10 items-center justify-center rounded-full font-black">
+                <div className="bg-surface-container-highest font-headline flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-black">
                   {selectedEntry.userName
                     .split(' ')
                     .map((n) => n[0])
@@ -177,23 +177,35 @@ export default function MyRoundPage() {
                       className={`bg-surface-container-low flex items-center justify-between rounded-xl border-l-4 px-4 py-3 ${borderColor}`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-headline text-sm font-black">
-                          {match.isFinished
-                            ? `${homeName} ${match.homeGoals}-${match.awayGoals} ${awayName}`
-                            : `${homeName} - ${awayName}`}
+                        <p className="font-headline mb-2 text-base leading-tight font-black">
+                          {homeName} - {awayName}
                         </p>
-                        <p className="text-on-surface-variant text-xs">
-                          {pred ? (
-                            <>
-                              Pred:{' '}
-                              <span className="text-on-surface font-bold">
-                                {pred.homeGoals}-{pred.awayGoals}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-on-surface-variant w-20 text-[10px] font-bold tracking-wider uppercase">
+                              Predicción
+                            </span>
+                            {pred ? (
+                              <span className="font-headline font-black">
+                                {pred.homeGoals} – {pred.awayGoals}
                               </span>
-                            </>
-                          ) : (
-                            'Sin predicción'
+                            ) : (
+                              <span className="text-on-surface-variant text-xs">
+                                Sin predicción
+                              </span>
+                            )}
+                          </div>
+                          {match.isFinished && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-on-surface-variant w-20 text-[10px] font-bold tracking-wider uppercase">
+                                Real
+                              </span>
+                              <span className="font-headline text-on-surface-variant font-black">
+                                {match.homeGoals} – {match.awayGoals}
+                              </span>
+                            </div>
                           )}
-                        </p>
+                        </div>
                       </div>
                       {points !== null && (
                         <span
@@ -388,31 +400,33 @@ export default function MyRoundPage() {
                 className={`glass-panel flex items-center justify-between rounded-xl border-l-4 p-4 shadow-lg ${borderColor}`}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className="font-headline text-base leading-tight font-black">
-                      {match.isFinished
-                        ? `${homeName} ${match.homeGoals} - ${match.awayGoals} ${awayName}`
-                        : `${homeName} - ${awayName}`}
-                    </span>
-                    <span
-                      className={`rounded px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${match.isFinished ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'}`}
-                    >
-                      {match.isFinished ? 'Final' : 'Pendiente'}
-                    </span>
+                  <div className="font-headline mb-2 text-base leading-tight font-black">
+                    {homeName} - {awayName}
                   </div>
-                  {prediction && (
-                    <span className="text-on-surface-variant text-xs font-medium tracking-tighter uppercase">
-                      Tu pred:{' '}
-                      <span className="text-on-surface font-bold">
-                        {prediction.homeGoals} - {prediction.awayGoals}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-on-surface-variant w-20 text-[10px] font-bold tracking-wider uppercase">
+                        Predicción
                       </span>
-                    </span>
-                  )}
-                  {!prediction && (
-                    <span className="text-on-surface-variant text-xs font-medium">
-                      Sin predicción
-                    </span>
-                  )}
+                      {prediction ? (
+                        <span className="font-headline font-black">
+                          {prediction.homeGoals} – {prediction.awayGoals}
+                        </span>
+                      ) : (
+                        <span className="text-on-surface-variant text-xs">Sin predicción</span>
+                      )}
+                    </div>
+                    {match.isFinished && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-on-surface-variant w-20 text-[10px] font-bold tracking-wider uppercase">
+                          Real
+                        </span>
+                        <span className="font-headline text-on-surface-variant font-black">
+                          {match.homeGoals} – {match.awayGoals}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {points !== null && (
@@ -430,6 +444,11 @@ export default function MyRoundPage() {
                       {label}
                     </span>
                   </div>
+                )}
+                {!match.isFinished && (
+                  <span className="bg-surface-container-high text-on-surface-variant ml-4 shrink-0 self-start rounded px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
+                    Pendiente
+                  </span>
                 )}
               </div>
             )
