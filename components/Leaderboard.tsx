@@ -27,7 +27,7 @@ function Avatar({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' | 'lg'
 
   return (
     <div
-      className={`bg-surface-container-highest font-headline flex items-center justify-center rounded-full font-black ${sizeClasses[size]}`}
+      className={`bg-surface-container-highest font-headline flex shrink-0 items-center justify-center rounded-full font-black ${sizeClasses[size]}`}
     >
       {initials}
     </div>

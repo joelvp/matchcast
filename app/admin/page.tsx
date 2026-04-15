@@ -276,6 +276,21 @@ export default function AdminPage() {
     })
     const data = await res.json()
     setResultResult(res.ok ? '✓ Resultado guardado.' : `✗ ${(data as { error: string }).error}`)
+    if (res.ok) {
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === resultMatchId
+            ? {
+                ...m,
+                homeGoals: Number(resultHome),
+                awayGoals: Number(resultAway),
+                isFinished: resultFinished,
+                isLive: !resultFinished,
+              }
+            : m,
+        ),
+      )
+    }
   }
 
   async function handleClearResult() {
@@ -292,7 +307,7 @@ export default function AdminPage() {
       setMatches((prev) =>
         prev.map((m) =>
           m.id === resultMatchId
-            ? { ...m, homeGoals: null, awayGoals: null, isFinished: false }
+            ? { ...m, homeGoals: null, awayGoals: null, isFinished: false, isLive: false }
             : m,
         ),
       )
