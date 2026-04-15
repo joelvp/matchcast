@@ -24,16 +24,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'homeGoals and awayGoals are required' }, { status: 400 })
   }
 
+  const finished = isFinished ?? true
   const { error } = await supabaseServer
     .from('matches')
     .update({
       home_goals: homeGoals,
       away_goals: awayGoals,
-      is_finished: isFinished ?? true,
+      is_finished: finished,
+      is_live: !finished,
     })
     .eq('id', matchId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await supabaseServer.rpc('refresh_standings')
 
   revalidatePath('/')
   revalidatePath('/results')
@@ -60,10 +64,12 @@ export async function DELETE(request: NextRequest) {
 
   const { error } = await supabaseServer
     .from('matches')
-    .update({ home_goals: null, away_goals: null, is_finished: false })
+    .update({ home_goals: null, away_goals: null, is_finished: false, is_live: false })
     .eq('id', matchId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await supabaseServer.rpc('refresh_standings')
 
   revalidatePath('/')
   revalidatePath('/results')

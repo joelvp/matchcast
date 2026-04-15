@@ -10,6 +10,8 @@ export default async function HomePage() {
     standings.map((s) => [s.teamId, { shortName: s.shortName, shieldUrl: s.shieldUrl }]),
   )
 
+  const hasLive = matches.some((m) => m.isLive)
+
   return (
     <div className="space-y-8">
       <section>
@@ -21,7 +23,7 @@ export default async function HomePage() {
       </section>
 
       <section>
-        <StandingsTable standings={standings} />
+        <StandingsTable standings={standings} badge={hasLive ? 'live' : undefined} />
       </section>
 
       <section>

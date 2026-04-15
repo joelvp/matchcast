@@ -53,3 +53,6 @@ next-env.d.ts
 
 # Supabase local config (environment-specific)
 supabase/.temp/
+
+# MCP local config
+.mcp.json
