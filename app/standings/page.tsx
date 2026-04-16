@@ -150,15 +150,8 @@ export default function StandingsPage() {
       {/* Hero */}
       <section>
         <h1 className="font-headline text-4xl leading-tight font-extrabold tracking-tighter uppercase">
-          Proyección si tus
-          <br />
-          <span className="text-primary">predicciones</span>
-          <br />
-          se cumplen
+          <span className="text-primary">Clasificación</span>
         </h1>
-        <p className="text-on-surface-variant mt-3 max-w-xs text-sm opacity-80">
-          Tabla actualizada al momento en base a tus predicciones.
-        </p>
       </section>
 
       {/* Round tabs */}

@@ -305,7 +305,7 @@ export default function MyRoundPage() {
       {/* Page title */}
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-4xl leading-none font-extrabold tracking-tighter uppercase">
-          Mi <span className="text-primary">Jornada</span>
+          Tu <span className="text-primary">Jornada</span>
         </h1>
         <button
           onClick={() => setShowHelp(true)}

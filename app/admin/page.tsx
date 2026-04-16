@@ -83,6 +83,7 @@ export default function AdminPage() {
   // Sync
   const [syncResult, setSyncResult] = useState<string | null>(null)
   const [syncLoading, setSyncLoading] = useState(false)
+  const [syncForce, setSyncForce] = useState(false)
 
   // Restore elevation from sessionStorage on mount, clear on unmount
   useEffect(() => {
@@ -335,9 +336,19 @@ export default function AdminPage() {
     setSyncResult(null)
     setSyncLoading(true)
     try {
-      const res = await adminFetch('/api/admin/sync', { method: 'POST' })
+      const res = await adminFetch('/api/admin/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: syncForce }),
+      })
       const data = await res.json()
-      setSyncResult(res.ok ? '✓ Sync completado.' : `✗ ${(data as { error: string }).error}`)
+      if (!res.ok) {
+        setSyncResult(`✗ ${(data as { error: string }).error}`)
+      } else if ((data as { skipped?: boolean }).skipped) {
+        setSyncResult('⚠ Sin partidos hoy. Usa "Forzar" para ignorar el guard.')
+      } else {
+        setSyncResult('✓ Sync completado.')
+      }
     } finally {
       setSyncLoading(false)
     }
@@ -838,9 +849,18 @@ export default function AdminPage() {
             Lanza el sync manual de resultados desde resultadoshockey.isquad.es. Equivale al sync
             automático del domingo.
           </p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={syncForce}
+              onChange={(e) => setSyncForce(e.target.checked)}
+              className="accent-primary h-4 w-4"
+            />
+            <span className="text-on-surface-variant">Forzar (ignorar guard de día)</span>
+          </label>
           {syncResult && (
             <p
-              className={`text-sm font-medium ${syncResult.startsWith('✓') ? 'text-primary' : 'text-secondary'}`}
+              className={`text-sm font-medium ${syncResult.startsWith('✓') ? 'text-primary' : syncResult.startsWith('⚠') ? 'text-on-surface-variant' : 'text-secondary'}`}
             >
               {syncResult}
             </p>

@@ -90,11 +90,22 @@ async function scrapeRound(round: number): Promise<ScrapedMatch[]> {
   return results
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
   const supabase = createClient(supabaseUrl, serviceKey)
+
+  const force = new URL(req.url).searchParams.get('force') === 'true'
+
+  if (!force) {
+    const { data: hasMatches } = await supabase.rpc('has_matches_to_sync')
+    if (!hasMatches) {
+      return new Response(JSON.stringify({ ok: true, skipped: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  }
 
   const { data: teams, error: teamsErr } = await supabase.from('teams').select('id, name')
   if (teamsErr) return new Response(JSON.stringify({ error: teamsErr.message }), { status: 500 })
@@ -129,6 +140,18 @@ Deno.serve(async () => {
   }
 
   await supabase.rpc('refresh_standings')
+
+  // Invalidate Next.js cache after sync
+  const appUrl = Deno.env.get('APP_URL')
+  const revalidateSecret = Deno.env.get('REVALIDATE_SECRET')
+  const bypassSecret = Deno.env.get('VERCEL_BYPASS_SECRET')
+  if (appUrl && revalidateSecret) {
+    const headers: Record<string, string> = { 'x-revalidate-secret': revalidateSecret }
+    if (bypassSecret) headers['x-vercel-protection-bypass'] = bypassSecret
+    await fetch(`${appUrl}/api/revalidate`, { method: 'POST', headers }).catch(() => {
+      /* non-fatal */
+    })
+  }
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json' },

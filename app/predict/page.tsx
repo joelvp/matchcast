@@ -71,8 +71,8 @@ export default function PredictPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-headline text-3xl font-extrabold tracking-tighter uppercase">
-          Predecir
+        <h1 className="font-headline text-4xl font-extrabold tracking-tighter uppercase">
+          Tu <span className="text-primary">quiniela</span>
         </h1>
         <span className="bg-surface-container-high text-on-surface-variant rounded-full px-3 py-1 text-xs font-bold">
           {userName}
