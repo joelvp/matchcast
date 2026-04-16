@@ -130,6 +130,18 @@ Deno.serve(async () => {
 
   await supabase.rpc('refresh_standings')
 
+  // Invalidate Next.js cache after sync
+  const appUrl = Deno.env.get('APP_URL')
+  const revalidateSecret = Deno.env.get('REVALIDATE_SECRET')
+  if (appUrl && revalidateSecret) {
+    await fetch(`${appUrl}/api/revalidate`, {
+      method: 'POST',
+      headers: { 'x-revalidate-secret': revalidateSecret },
+    }).catch(() => {
+      /* non-fatal */
+    })
+  }
+
   return new Response(JSON.stringify({ ok: true }), {
     headers: { 'Content-Type': 'application/json' },
   })
