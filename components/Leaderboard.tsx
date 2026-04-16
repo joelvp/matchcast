@@ -3,12 +3,13 @@ import type { LeaderboardEntry } from '@/domain/types'
 type Props = {
   entries: LeaderboardEntry[]
   currentUserId?: string
+  positionDeltas?: Record<string, number>
 }
 
 function FormBadge({ points }: { points: number }) {
   const color =
     points === 5 ? 'bg-primary-container' : points === 2 ? 'bg-tertiary-container' : 'bg-error'
-  return <div className={`h-4 w-4 rounded-sm ${color}`} />
+  return <div className={`ring-surface h-3 w-3 rounded-full ring-2 ${color}`} />
 }
 
 function Avatar({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -34,7 +35,7 @@ function Avatar({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' | 'lg'
   )
 }
 
-export function Leaderboard({ entries, currentUserId }: Props) {
+export function Leaderboard({ entries, currentUserId, positionDeltas }: Props) {
   if (entries.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -142,18 +143,20 @@ export function Leaderboard({ entries, currentUserId }: Props) {
 
       {/* Full ranking list */}
       <div className="space-y-3">
-        <div className="text-on-surface-variant/60 grid grid-cols-[40px_1fr_100px_64px] px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
-          <span>#Pos</span>
+        <div className="text-on-surface-variant/60 grid grid-cols-[32px_24px_1fr_100px_64px] gap-x-3 px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+          <span>#</span>
+          <span />
           <span>Participante</span>
           <span className="text-center">Forma</span>
           <span className="text-right">Pts</span>
         </div>
         {entries.map((entry, idx) => {
           const isCurrentUser = entry.userId === currentUserId
+          const delta = positionDeltas?.[entry.userId]
           return (
             <div
               key={entry.userId}
-              className={`animate-fade-in-up grid grid-cols-[40px_1fr_100px_64px] items-center rounded-xl border-l-4 px-4 py-4 transition-colors ${
+              className={`animate-fade-in-up grid grid-cols-[32px_24px_1fr_100px_64px] items-center gap-x-3 rounded-xl border-l-4 px-4 py-4 transition-colors ${
                 isCurrentUser
                   ? 'border-primary bg-primary/5'
                   : 'bg-surface-container-low border-transparent'
@@ -161,14 +164,23 @@ export function Leaderboard({ entries, currentUserId }: Props) {
               style={{ animationDelay: `${idx * 40}ms`, opacity: 0 }}
             >
               <span className="font-headline text-on-surface-variant font-bold">{idx + 1}</span>
+              <span className="text-center text-xs font-bold">
+                {delta === undefined || delta === 0 ? (
+                  <span className="text-on-surface-variant">—</span>
+                ) : delta > 0 ? (
+                  <span className="text-primary">↑{delta}</span>
+                ) : (
+                  <span className="text-secondary">↓{Math.abs(delta)}</span>
+                )}
+              </span>
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar name={entry.userName} size="sm" />
                 <span className="font-headline text-on-surface truncate font-bold">
                   {entry.userName}
                 </span>
               </div>
-              <div className="flex justify-center gap-1">
-                {entry.breakdown.map((b) => (
+              <div className="flex justify-center -space-x-0.5">
+                {entry.breakdown.slice(-4).map((b) => (
                   <FormBadge key={b.matchId} points={b.points} />
                 ))}
               </div>
