@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
 import { verifyAdminSession } from '@/infrastructure/supabase/adminAuth'
 
 export async function POST(request: NextRequest) {
@@ -7,9 +6,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-results`
+  const body = await request.json().catch(() => ({}))
+  const force = body.force === true
 
-  const res = await fetch(edgeFunctionUrl, {
+  const url = new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-results`)
+  if (force) url.searchParams.set('force', 'true')
+
+  const res = await fetch(url.toString(), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
@@ -21,8 +24,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error }, { status: res.status })
   }
 
-  revalidatePath('/')
-  revalidatePath('/results')
-
-  return NextResponse.json({ ok: true })
+  const data = await res.json()
+  return NextResponse.json(data)
 }
