@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation'
 
 const tabs = [
   { label: 'Inicio', href: '/', icon: 'home' },
-  { label: 'Predecir', href: '/predict', icon: 'edit' },
-  { label: 'Proyección', href: '/standings', icon: 'bar_chart' },
-  { label: 'Mi Jornada', href: '/my-round', icon: 'sports' },
-  { label: 'Marcador', href: '/results', icon: 'emoji_events' },
+  { label: 'Quiniela', href: '/predict', icon: 'edit' },
+  { label: 'Clasificación', href: '/standings', icon: 'bar_chart' },
+  { label: 'Jornada', href: '/my-round', icon: 'sports' },
+  { label: 'Ranking', href: '/results', icon: 'emoji_events' },
 ]
 
 export default function BottomNav() {

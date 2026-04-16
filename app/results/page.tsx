@@ -15,12 +15,9 @@ export default async function ResultsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <span className="font-headline text-secondary text-sm font-bold tracking-widest uppercase">
-          Global Ranking
-        </span>
-        <h1 className="font-headline text-primary text-4xl leading-none font-bold">MARCADOR</h1>
-      </div>
+      <h1 className="font-headline text-4xl leading-none font-extrabold tracking-tighter uppercase">
+        Ranking
+      </h1>
 
       <Leaderboard entries={entries} />
     </div>
