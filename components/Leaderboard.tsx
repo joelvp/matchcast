@@ -143,7 +143,7 @@ export function Leaderboard({ entries, currentUserId, positionDeltas }: Props) {
 
       {/* Full ranking list */}
       <div className="space-y-3">
-        <div className="text-on-surface-variant/60 grid grid-cols-[32px_24px_1fr_100px_64px] gap-x-3 px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
+        <div className="text-on-surface-variant/60 grid grid-cols-[28px_20px_1fr_56px_40px] gap-x-3 px-4 py-2 text-[10px] font-bold tracking-widest uppercase">
           <span>#</span>
           <span />
           <span>Participante</span>
@@ -156,7 +156,7 @@ export function Leaderboard({ entries, currentUserId, positionDeltas }: Props) {
           return (
             <div
               key={entry.userId}
-              className={`animate-fade-in-up grid grid-cols-[32px_24px_1fr_100px_64px] items-center gap-x-3 rounded-xl border-l-4 px-4 py-4 transition-colors ${
+              className={`animate-fade-in-up grid grid-cols-[28px_20px_1fr_56px_40px] items-center gap-x-3 rounded-xl border-l-4 px-4 py-4 transition-colors ${
                 isCurrentUser
                   ? 'border-primary bg-primary/5'
                   : 'bg-surface-container-low border-transparent'
